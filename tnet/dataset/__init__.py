@@ -59,8 +59,8 @@ class Attribute(object):
 
 class Dataset(object):
 
-    def __init__(self, attributes=[]):
-        self._attributes = attributes
+    def __init__(self):
+        self._attributes = []
         self._data = None
 
 
@@ -177,8 +177,10 @@ class BatchDataset(Dataset):
                 break
 
             s = self._dataset[idx_]
+
             for j, a in enumerate(self._dataset.attributes):
                 samples[a].append(s[j])
+
 
         samples = dict([(a.name, np.array(samples[a])) for a in self._dataset.attributes])
 
@@ -195,6 +197,7 @@ class ResampleDataset(Dataset):
     def __init__(self, dataset, size=None):
         assert isinstance(dataset, Dataset)
         super(ResampleDataset, self).__init__()
+        self._attributes = dataset.attributes
 
         self._dataset = dataset
         if size is None:
@@ -257,7 +260,7 @@ class DatasetIterator(object):
     def _run(self):
 
         size = self._dataset.size
-        
+
         idx = 0
         while idx < size:
             pidx = self._perm(idx)

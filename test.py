@@ -42,6 +42,7 @@ class MNISTDataset(Dataset):
         self.add_attribute("target", np.ndarray)
         self.__load_data(path, mode)
 
+
     def __load_data(self, path='mnist.pkl.gz', mode='train'):
 
         print('... loading data')
@@ -67,7 +68,7 @@ class MNISTDataset(Dataset):
                     _,_, data = pickle.load(f, encoding='latin1')
                 except:
                     _,_, data= pickle.load(f)
-        print(data[0].shape)
+        
         self._dataset = data
 
     def _get(self, idx):
@@ -81,21 +82,19 @@ class MNISTDataset(Dataset):
 
 def get_iterator(mode='train'):
 
-    mnist_trainset = MNISTDataset('data/mnist.pkl.gz', 'train')
-    print(mnist_trainset.size)
+    mnist_trainset = MNISTDataset('data/mnist.pkl.gz', mode)
     #iterator = DatasetIterator(mnist_trainset)
 
     data = BatchDataset(
         dataset=ShuffleDataset(
             dataset=mnist_trainset
         ),
-        batch_size=32
+        batch_size=128
     )
     return DatasetIterator(data)
+
 loss_meter  = meter.AverageValueMeter()
 clerr  = meter.ClassErrorMeter()
-
-print_every = 2
 
 def on_sample_handler(args):
     print(args.sample["target"][0])
@@ -114,11 +113,14 @@ def on_forward_handler(args):
     clerr.add(args.network_output, args.target)
 
     #if args.epoch % print_every == 0:
-    #sys.stderr.write
-    print('epoch: {}; avg. loss: {:2.2f}; avg. error: {:2.2f}'.format(args.epoch, loss_meter.value[0], clerr.value), end="\r")
-    #sys.stderr.flush()
+    #
+    sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. error: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], clerr.value))
+    sys.stderr.flush()
 
-iterator = get_iterator()
+sys.stderr.write("\r\n")
+print("")
+iterator = get_iterator('train')
+
 #iterator.on_sample += on_sample_handler
 model = nn.Sequential()
 model.add(nn.Linear(28 * 28, 10))
@@ -130,6 +132,15 @@ optimizer.on_forward += on_forward_handler
 optimizer.on_start_poch += on_start_poch_handler
 optimizer.train(model, criterion, iterator, learning_rate=0.2,  maxepoch=2)
 
-iterator = get_iterator('test')
 
+#testing
+iterator = get_iterator('test')
 clerr.reset()
+loss_meter.reset()
+for sample in iterator():
+    p_y_given_x = model.forward(sample['input'])
+    loss = criterion.forward(p_y_given_x, sample['target'])
+    loss_meter.add(loss)
+    clerr.add(p_y_given_x, sample['target'])
+
+print('test; avg. loss: {:2.2f}; avg. error: {:2.2f}'.format(loss_meter.value[0], clerr.value))
