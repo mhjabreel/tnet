@@ -38,13 +38,13 @@ class TrainingEventArgs(EventArgs):
         self.epoch = epoch
 
 
-class OnStartEpochEventArgs(EventArgs):
+class OnStartEpochEventArgs(TrainingEventArgs):
 
     def __init__(self, epoch, start_time):
         super(OnStartEpochEventArgs, self).__init__(epoch)
         self.start_time = start_time
 
-class OnEndEpochEventArgs(EventArgs):
+class OnEndEpochEventArgs(TrainingEventArgs):
     def __init__(self, epoch, start_time, end_time):
         super(OnEndEpochEventArgs, self).__init__(epoch)
         self.start_time = start_time
