@@ -16,19 +16,19 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from sklearn.metrics import accuracy_score
+
 
 from tnet.meter import Meter
 import numpy as np
 import math
 
-__all__ = ["ClassErrorMeter"]
+__all__ = ["AccuracyMeter"]
 
-class ClassErrorMeter (Meter):
+class AccuracyMeter (Meter):
 
-    def __init__(self, accuracy=False):
-        super(ClassErrorMeter, self).__init__()
-        self._accuracy = accuracy
+    def __init__(self, error=False):
+        super(AccuracyMeter, self).__init__()
+        self._error = error
 
 
 
@@ -47,14 +47,14 @@ class ClassErrorMeter (Meter):
         if output.ndim == 2:
             output = np.argmax(output, axis=1)
 
-        score = (target != output)
+        score = (target == output)
 
-        self._sum += accuracy_score(target, output) #score.sum()
-        self._count += 1#len(score)
+        self._sum += score.sum()
+        self._count += len(score)
 
     @property
     def value(self):
-        err = self._sum / self._count * 100
-        if self._accuracy:
-            return 100 - err
-        return err
+        acc = self._sum / self._count * 100
+        if self._error:
+            return 100 - acc
+        return acc

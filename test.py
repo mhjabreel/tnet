@@ -51,7 +51,7 @@ def get_iterator(data):
 
 
 loss_meter  = meter.AverageValueMeter()
-clerr  = meter.ClassErrorMeter(accuracy=False)
+acc_meter  = meter.AccuracyMeter()
 
 def on_sample_handler(args):
 
@@ -63,32 +63,32 @@ def on_sample_handler(args):
 def on_start_poch_handler(args):
     model.running_mode = 'train'
     loss_meter.reset()
-    clerr.reset()
+    acc_meter.reset()
 
 
 def on_forward_handler(args):
 
     loss_meter.add(args.criterion_output)
-    clerr.add(args.network_output, args.target)
+    acc_meter.add(args.network_output, args.target)
 
-    sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], clerr.value))
+    sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     sys.stderr.flush()
 
 def on_end_epoch_handler(args):
-    print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], clerr.value))
+    print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     print("Validating")
 
     model.running_mode = 'eval'
     loss_meter.reset()
-    clerr.reset()
+    acc_meter.reset()
     p_y_given_x = model.forward(X_test)
     loss = criterion.forward(p_y_given_x, y_test)
     loss_meter.add(loss)
-    clerr.add(p_y_given_x, y_test)
+    acc_meter.add(p_y_given_x, y_test)
 
 
 
-    print('eval; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], clerr.value))
+    print('eval; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
 
 
 
@@ -125,19 +125,14 @@ model.running_mode = 'eval'
 
 print("Testing")
 
+acc_meter.reset()
+loss_meter.reset()
+
 p_y_given_x = model.forward(X_test)
 loss = criterion.forward(p_y_given_x, y_test)
 loss_meter.add(loss)
-clerr.add(p_y_given_x, y_test)
+acc_meter.add(p_y_given_x, y_test)
 
 
 
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], clerr.value))
-
-
-from sklearn.metrics import accuracy_score
-
-y_pred = p_y_given_x.argmax(axis=1)
-
-acc = accuracy_score(y_test, y_pred)
-print(acc)
+print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))

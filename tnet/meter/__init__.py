@@ -16,5 +16,5 @@
 from __future__ import absolute_import
 
 from tnet.meter.meter import *
-from tnet.meter.classerrormeter import *
+from tnet.meter.accuracymeter import *
 from tnet.meter.averagevaluemeter import *
