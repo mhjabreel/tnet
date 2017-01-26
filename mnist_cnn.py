@@ -82,7 +82,7 @@ def on_sample_handler(args):
     x = args.sample["input"]
     x = numpy.reshape(x, (x.shape[0], 1,  28, 28))
     args.sample["input"] = x
-    print(args.sample["input"].shape)
+    
 
 
 

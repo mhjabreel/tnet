@@ -67,7 +67,7 @@ class Module(object):
         if hasattr(self, '_input_info') and not self._input_info is None:
             input_shape = self._input_info.shape
             input_shape = [s if not s is None else 1 for s in input_shape]
-            
+
             mock_input = np.array(np.zeros([1] + input_shape), self._input_info.dtype)
 
             self.forward(mock_input)
@@ -145,3 +145,8 @@ class Module(object):
     def running_mode(self, mode):
         assert mode in ['train', 'eval']
         self._set_running_mode(mode)
+
+    @property
+    def input_info(self):
+        if hasattr(self, '_input_info'):
+            return self._input_info

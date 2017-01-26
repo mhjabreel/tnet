@@ -97,8 +97,9 @@ train_dataset, [X_test, y_test] = mnist.get_data()
 
 iterator = get_iterator(train_dataset)
 
-iterator.on_sample += on_sample_handler
+iterator.on_sample += lambda a : print("Hi")
 
+print (iterator.on_sample.handlers)
 
 model = nn.Sequential() \
     .add(nn.SpatialConvolution(1, 32, 3, 3)) \

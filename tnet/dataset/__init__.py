@@ -188,6 +188,11 @@ class BatchDataset(Dataset):
 
 
     @property
+    def batch_size(self):
+        return self._batch_size
+
+
+    @property
     def size(self):
         return self._size
 
@@ -261,7 +266,7 @@ class DatasetIterator(object):
 
         size = self._dataset.size
 
-        
+
         idx = 0
         while idx < size:
             pidx = self._perm(idx)
@@ -275,3 +280,8 @@ class DatasetIterator(object):
 
     def __call__(self):
         return self._run()
+
+
+    @property
+    def dataset(self):
+        return self.dataset

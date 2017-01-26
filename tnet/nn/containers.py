@@ -73,7 +73,7 @@ class Container(Module):
     def parameter_values(self, values):
         pass
 
-    
+
     def _set_running_mode(self, mode):
         assert mode in ['train', 'eval']
         self._mode = mode
@@ -93,3 +93,11 @@ class Sequential(Container):
             last_output = m(last_output)
 
         return last_output
+
+
+    @property
+    def input_info(self):
+        if len(self._modules) > 0:
+            m = self._modules[0]
+            return m.input_info
+    

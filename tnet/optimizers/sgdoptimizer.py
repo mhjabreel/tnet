@@ -35,7 +35,15 @@ class SGDOptimizer(Optimizer):
 
     def _get_train_fn(self, network, criterion, learning_rate):
 
-        x = T.matrix('x')  # data, presented as rasterized images
+        if network.input_info is None:
+            raise ValueError("The passed network has no specific input")
+
+        inf = network.input_info
+        ndim = len(inf.shape) + 1
+        print(ndim)
+        broadcast = (False,) * ndim
+        x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+
         y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
 
 
