@@ -65,7 +65,11 @@ class Module(object):
 
     def _compile(self, **kwargs):
         if hasattr(self, '_input_info') and not self._input_info is None:
-            mock_input = np.array(np.zeros([1] + self._input_info.shape), self._input_info.dtype)
+            input_shape = self._input_info.shape
+            input_shape = [s if not s is None else 1 for s in input_shape]
+            
+            mock_input = np.array(np.zeros([1] + input_shape), self._input_info.dtype)
+
             self.forward(mock_input)
         else:
             self.forward(np.random.rand(1) + 1.5)
@@ -110,6 +114,7 @@ class Module(object):
     def forward(self, input_or_inputs):
         out = self._update_output(input_or_inputs)
         self._output = out.eval()
+
         return self._output
 
     @property

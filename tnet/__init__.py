@@ -14,3 +14,8 @@
 # =============================================================================
 
 from __future__ import absolute_import
+
+from tnet import nn
+from tnet import dataset
+from tnet import meter
+from tnet import optimizers

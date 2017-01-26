@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
+
+'''Trains a simple convnet on the MNIST dataset.
+Gets to 98.14% test accuracy after 20 epochs.
+'''
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -35,7 +40,24 @@ import timeit
 
 import numpy
 
-#numpy.random.seed(1337)  # for reproducibility
+numpy.random.seed(1337)  # for reproducibility
+
+
+batch_size = 128
+nb_classes = 10
+nb_epoch = 12
+
+# input image dimensions
+img_rows, img_cols = 28, 28
+# number of convolutional filters to use
+nb_filters = 32
+# size of pooling area for max pooling
+pool_size = (2, 2)
+# convolution kernel size
+kernel_size = (3, 3)
+
+kw = 3
+kh = 3
 
 
 
@@ -46,7 +68,9 @@ def get_iterator(data):
         ),
         batch_size=128
     )
-    return DatasetIterator(data)
+    iterator = DatasetIterator(data)
+
+    return iterator
 
 
 
@@ -54,11 +78,12 @@ loss_meter  = meter.AverageValueMeter()
 acc_meter  = meter.AccuracyMeter()
 
 def on_sample_handler(args):
-    print("H")
+
     x = args.sample["input"]
-    x = numpy.reshape(x, (x.shape[0], 1, 28, 28))
+    x = numpy.reshape(x, (x.shape[0], 1,  28, 28))
     args.sample["input"] = x
     print(args.sample["input"].shape)
+
 
 
 def on_start_poch_handler(args):
@@ -77,19 +102,6 @@ def on_forward_handler(args):
 
 def on_end_epoch_handler(args):
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("Validating")
-
-    model.running_mode = 'eval'
-    loss_meter.reset()
-    acc_meter.reset()
-    p_y_given_x = model.forward(X_test)
-    loss = criterion.forward(p_y_given_x, y_test)
-    loss_meter.add(loss)
-    acc_meter.add(p_y_given_x, y_test)
-
-
-
-    print('eval; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
 
 
 
@@ -99,19 +111,18 @@ iterator = get_iterator(train_dataset)
 
 iterator.on_sample += on_sample_handler
 
-
 model = nn.Sequential() \
-    .add(nn.SpatialConvolution(1, 32, 3, 3)) \
+    .add(nn.SpatialConvolution(1, nb_filters, 3, 3)) \
     .add(nn.ReLU()) \
-    .add(nn.SpatialConvolution(32, 32, 3, 3)) \
+    .add(nn.SpatialConvolution(nb_filters, nb_filters, 3, 3)) \
     .add(nn.ReLU()) \
     .add(nn.SpatialMaxPooling(2, 2)) \
     .add(nn.Dropout(0.25)) \
     .add(nn.Flatten()) \
-    .add(nn.Linear(32 * 12 * 12, 128)) \
+    .add(nn.Linear(nb_filters * 12 * 12, 128)) \
     .add(nn.ReLU()) \
     .add(nn.Dropout(0.5)) \
-    .add(nn.Linear(128, 10)) \
+    .add(nn.Linear(128, nb_classes)) \
     .add(nn.SoftMax())
 
 model.running_mode = 'train'

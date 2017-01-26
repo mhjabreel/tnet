@@ -13,12 +13,42 @@
 # limitations under the License.
 # =============================================================================
 from __future__ import absolute_import
-from tnet.nn.module import *
-from tnet.nn.simple import *
-from tnet.nn.linear import *
-from tnet.nn.dropout import *
-from tnet.nn.activations import *
-from tnet.nn.convolutional import *
-from tnet.nn.pooling import *
-from tnet.nn.containers import *
-from tnet.nn.criteria import *
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+import theano
+import math
+
+from tnet.nn import Module, InputInfo
+
+__all__ = [
+    "Flatten",
+]
+
+T  = theano.tensor
+func = theano.function
+to_tensor = T.as_tensor_variable
+to_shared = theano.shared
+config = theano.config
+
+
+
+class Flatten(Module):
+
+    def __init__(self):
+
+        super(Flatten, self).__init__()
+
+
+    def _declare(self):
+        pass
+
+
+    def _update_output(self, inp):
+        inp = self._prpare_inputs(inp)
+        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+
+        y = T.reshape(inp, (inp.shape[0], T.prod(inp.shape) // inp.shape[0]))
+
+        return y

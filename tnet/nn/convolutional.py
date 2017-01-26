@@ -23,7 +23,7 @@ import math
 from tnet.nn import Module, InputInfo
 
 __all__ = [
-    "Linear",
+    "SpatialConvolution",
 ]
 
 T  = theano.tensor
@@ -32,40 +32,47 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
-class Linear(Module):
 
-    def __init__(self, input_size, output_size, has_bias=True):
-        self._input_info = InputInfo(dtype=config.floatX, shape=[input_size])
+class SpatialConvolution(Module):
 
-        self._has_bias = has_bias
-        self._input_size = input_size
-        self._output_size = output_size
+    def __init__(self, n_input_plane, n_output_plane, kw, kh, dw=1, dh=1, padw=0, padh=0, bias=True):
 
-        super(Linear, self).__init__()
+        self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh + 1, kw + 1])
+        self._n_input_plane = n_input_plane
+        self._n_output_plane = n_output_plane
+        self._kw = kw
+        self._kh = kh
+        self._dw = dw
+        self._dh = dh
+        self._padw = padw
+        self._padh = padh
+        self._has_bias = bias
+
+        super(SpatialConvolution, self).__init__()
+
 
     def _declare(self):
 
-        nin = self._input_size
-        nout = self._output_size
-        stdv = 1. / math.sqrt(nin)
+        self._filter_shape = (self._n_output_plane, self._n_input_plane, self._kh, self._kw)
+        self._image_shape = (None, self._n_input_plane, None, None)
+
+        stdv = 1 / math.sqrt(self._kw * self._kh * self._n_input_plane)
 
         self._W_values = np.array(np.random.uniform(low=-stdv,
                                               high=stdv,
-                                              size=(nin, nout)),
-                            theano.config.floatX)
+                                              size=self._filter_shape),
+                                              theano.config.floatX)
 
         self._W = theano.shared(self._W_values, borrow=True)
-
 
         if self._has_bias:
 
             self._b_values = np.array(np.random.uniform(low=-stdv,
-                                                  high=stdv,
-                                                  size=(nout)),
-                                theano.config.floatX)
+                                                      high=stdv,
+                                                      size=(self._n_output_plane)),
+                                                      theano.config.floatX)
 
             self._b = theano.shared(self._b_values, borrow=True)
-
 
 
     def _update_output(self, inp):
@@ -73,14 +80,17 @@ class Linear(Module):
 
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
 
-        if inp.ndim == 1 or inp.ndim == 2:
-            y = T.dot(inp, self._W)
-            if self._has_bias:
-                y += self._b
+        y = T.nnet.conv2d(inp,
+                          self._W,
 
-            return y
-        else:
-            raise Exception("input must be vector or matrix")
+                          subsample=(self._dh, self._dw),
+                          border_mode=(self._padh, self._padw))
+
+        if self._has_bias:
+            y += self._b.dimshuffle('x', 0, 'x', 'x')
+
+        return y
+
 
     @property
     def parameters(self):

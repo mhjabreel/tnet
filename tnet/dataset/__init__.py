@@ -261,6 +261,7 @@ class DatasetIterator(object):
 
         size = self._dataset.size
 
+        
         idx = 0
         while idx < size:
             pidx = self._perm(idx)
