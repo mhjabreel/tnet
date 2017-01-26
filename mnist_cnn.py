@@ -82,8 +82,6 @@ def on_sample_handler(args):
     x = args.sample["input"]
     x = numpy.reshape(x, (x.shape[0], 1,  28, 28))
     args.sample["input"] = x
-    
-
 
 
 def on_start_poch_handler(args):
@@ -102,10 +100,13 @@ def on_forward_handler(args):
 
 def on_end_epoch_handler(args):
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+    print("elapsed time: %f" % (args.start_time - args.end_time))
 
 
 
 train_dataset, [X_test, y_test] = mnist.get_data()
+
+X_test = numpy.reshape(X_test, (X_test.shape[0], 1, 28, 28))
 
 iterator = get_iterator(train_dataset)
 
@@ -135,7 +136,7 @@ optimizer.on_start_poch += on_start_poch_handler
 optimizer.on_end_epoch += on_end_epoch_handler
 
 
-optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=20)
+optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=12)
 
 model.running_mode = 'eval'
 

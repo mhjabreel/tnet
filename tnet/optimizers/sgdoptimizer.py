@@ -15,11 +15,12 @@
 
 from __future__ import absolute_import
 
+import time
 import numpy as np
 import theano
 import math
 
-from tnet.optimizers import Optimizer, TrainingEventArgs, OnForwardEventArgs, OnBackwardEventArgs
+from tnet.optimizers import *
 from tnet.base import EventArgs, EventHook
 
 T  = theano.tensor
@@ -39,7 +40,7 @@ class SGDOptimizer(Optimizer):
             raise ValueError("The passed network has no specific input")
 
         inf = network.input_info
-        ndim = len(inf.shape) + 1 
+        ndim = len(inf.shape) + 1
 
         broadcast = (False,) * ndim
         x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
@@ -71,7 +72,8 @@ class SGDOptimizer(Optimizer):
         while epoch < maxepoch:
 
             epoch += 1
-            self.on_start_poch.invoke(TrainingEventArgs(epoch))
+            start_time = time.time()
+            self.on_start_poch.invoke(OnStartEpochEventArgs(epoch, start_time))
 
             for sample in iterator():
 
@@ -83,6 +85,6 @@ class SGDOptimizer(Optimizer):
                 self.on_update.invoke(TrainingEventArgs(epoch))
 
 
-            self.on_end_epoch.invoke(TrainingEventArgs(epoch))
+            self.on_end_epoch.invoke(OnEndEpochEventArgs(epoch, start_time, time.time()))
 
         self.on_end.invoke(EventArgs())

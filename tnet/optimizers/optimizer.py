@@ -24,8 +24,10 @@ from tnet.base import *
 __all__ = [
     "Optimizer",
     "TrainingEventArgs",
+    "OnStartEpochEventArgs",
+    "OnEndEpochEventArgs",
     "OnForwardEventArgs",
-    "OnBackwardEventArgs"
+    "OnBackwardEventArgs",
 ]
 
 
@@ -34,6 +36,19 @@ class TrainingEventArgs(EventArgs):
     def __init__(self, epoch):
         super(TrainingEventArgs, self).__init__()
         self.epoch = epoch
+
+
+class OnStartEpochEventArgs(EventArgs):
+
+    def __init__(self, epoch, start_time):
+        super(OnStartEpochEventArgs, self).__init__()
+        self.start_time = start_time
+
+class OnEndEpochEventArgs(EventArgs):
+    def __init__(self, epoch, start_time, end_time):
+        super(OnEndEpochEventArgs, self).__init__()
+        self.start_time = start_time
+        self.end_time = end_time
 
 
 class OnForwardEventArgs(TrainingEventArgs):
