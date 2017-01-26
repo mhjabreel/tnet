@@ -12,10 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================================
+
 from __future__ import absolute_import
-from tnet.nn.module import *
-from tnet.nn.linear import *
-from tnet.nn.dropout import *
-from tnet.nn.activations import *
-from tnet.nn.containers import *
-from tnet.nn.criteria import *

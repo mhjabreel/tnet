@@ -49,6 +49,7 @@ class Container(Module):
     def add(self, module):
         assert isinstance(module, Module)
         self._modules.append(module)
+        return self
 
     @property
     def parameters(self):
@@ -71,6 +72,14 @@ class Container(Module):
     @parameter_values.setter
     def parameter_values(self, values):
         pass
+
+    
+    def _set_running_mode(self, mode):
+        assert mode in ['train', 'eval']
+        self._mode = mode
+
+        for m in self._modules:
+            m.running_mode = mode
 
 class Sequential(Container):
 

@@ -49,9 +49,9 @@ class _Activation(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        mock_input = np.array(np.random.rand((1)),  config.floatX)
-        self.forward(mock_input)
+    #def _compile(self):
+        #mock_input = np.array(np.random.rand((1)),  config.floatX)
+        #self.forward(mock_input)
 
     def _update_output(self, inp):
 

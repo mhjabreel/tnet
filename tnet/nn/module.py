@@ -34,7 +34,14 @@ to_shared = theano.shared
 config = theano.config
 
 
-# Adopted from keras
+
+
+class RunningPhases(object):
+    """docstring for RunningPhases."""
+    def __init__(self, arg):
+        super(RunningPhases, self).__init__()
+        self.arg = arg
+
 
 class InputInfo(object):
 
@@ -50,14 +57,18 @@ class Module(object):
         if not hasattr(self, '_input_info'):
             self._input_info = None
 
+        self._mode = 'train'
+
         self._declare(**kwargs)
         self._compile(**kwargs)
 
 
     def _compile(self, **kwargs):
-        if hasattr(self, '_input_info'):
+        if hasattr(self, '_input_info') and not self._input_info is None:
             mock_input = np.array(np.zeros([1] + self._input_info.shape), self._input_info.dtype)
             self.forward(mock_input)
+        else:
+            self.forward(np.random.rand(1) + 1.5)
 
 
 
@@ -116,3 +127,16 @@ class Module(object):
     @parameter_values.setter
     def parameter_values(self, values):
         pass
+
+    @property
+    def running_mode(self):
+        return self._mode
+
+    def _set_running_mode(self, mode):
+        self._mode = mode
+
+
+    @running_mode.setter
+    def running_mode(self, mode):
+        assert mode in ['train', 'eval']
+        self._set_running_mode(mode)

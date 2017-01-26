@@ -38,6 +38,7 @@ class SGDOptimizer(Optimizer):
         x = T.matrix('x')  # data, presented as rasterized images
         y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
 
+
         self._p_y_given_x = network(x)
         self._cost = criterion(self._p_y_given_x, y)
 
@@ -59,7 +60,7 @@ class SGDOptimizer(Optimizer):
         self.on_start.invoke(EventArgs())
         epoch = 0
 
-        while epoch <= maxepoch:
+        while epoch < maxepoch:
 
             epoch += 1
             self.on_start_poch.invoke(TrainingEventArgs(epoch))

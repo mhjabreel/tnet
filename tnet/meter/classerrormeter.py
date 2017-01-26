@@ -16,6 +16,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from sklearn.metrics import accuracy_score
 
 from tnet.meter import Meter
 import numpy as np
@@ -48,8 +49,8 @@ class ClassErrorMeter (Meter):
 
         score = (target != output)
 
-        self._sum += score.sum()
-        self._count += len(score)
+        self._sum += accuracy_score(target, output) #score.sum()
+        self._count += 1#len(score)
 
     @property
     def value(self):
