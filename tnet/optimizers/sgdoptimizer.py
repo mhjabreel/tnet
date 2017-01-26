@@ -39,8 +39,8 @@ class SGDOptimizer(Optimizer):
             raise ValueError("The passed network has no specific input")
 
         inf = network.input_info
-        ndim = len(inf.shape) + 1
-        print(ndim)
+        ndim = len(inf.shape) + 1 
+
         broadcast = (False,) * ndim
         x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
 
