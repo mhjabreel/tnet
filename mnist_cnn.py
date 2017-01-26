@@ -100,7 +100,7 @@ def on_forward_handler(args):
 
 def on_end_epoch_handler(args):
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("elapsed time: %f" % (args.start_time - args.end_time))
+    print("elapsed time: %2.2f seconds" % (args.end_time - args.start_time))
 
 
 
