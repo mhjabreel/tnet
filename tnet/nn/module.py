@@ -69,7 +69,7 @@ class Module(object):
             input_shape = [s if not s is None else 1 for s in input_shape]
 
             mock_input = np.array(np.zeros([1] + input_shape), self._input_info.dtype)
-
+            
             self.forward(mock_input)
         else:
             self.forward(np.random.rand(1) + 1.5)

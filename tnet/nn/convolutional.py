@@ -24,6 +24,7 @@ from tnet.nn import Module, InputInfo
 
 __all__ = [
     "SpatialConvolution",
+    "TemporalConvolution"
 ]
 
 T  = theano.tensor
@@ -56,10 +57,10 @@ class SpatialConvolution(Module):
         self._filter_shape = (self._n_output_plane, self._n_input_plane, self._kh, self._kw)
         self._image_shape = (None, self._n_input_plane, None, None)
 
-        stdv = 1 / math.sqrt(self._kw * self._kh * self._n_input_plane)
-
-        self._W_values = np.array(np.random.uniform(low=-stdv,
-                                              high=stdv,
+        #stdv = 1 / math.sqrt(self._kw * self._kh * self._n_input_plane)
+        stdv = np.sqrt(6. / (self._n_input_plane + self._n_output_plane))
+        self._W_values = np.array(np.random.uniform(low=-s,
+                                              high=s,
                                               size=self._filter_shape),
                                               theano.config.floatX)
 
@@ -67,22 +68,20 @@ class SpatialConvolution(Module):
 
         if self._has_bias:
 
-            self._b_values = np.array(np.random.uniform(low=-stdv,
-                                                      high=stdv,
-                                                      size=(self._n_output_plane)),
+
+            self._b_values = np.array(np.zeros(self._n_output_plane),
                                                       theano.config.floatX)
 
             self._b = theano.shared(self._b_values, borrow=True)
 
 
     def _update_output(self, inp):
+
         inp = self._prpare_inputs(inp)
 
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
 
-        y = T.nnet.conv2d(inp,
-                          self._W,
-
+        y = T.nnet.conv2d(inp, self._W,
                           subsample=(self._dh, self._dw),
                           border_mode=(self._padh, self._padw))
 
@@ -109,3 +108,60 @@ class SpatialConvolution(Module):
         self._W_values = values[0]
         if self._has_bias:
             self._b_values = values[1]
+
+
+
+
+class TemporalConvolution(SpatialConvolution):
+
+    """
+    Applies a 1D convolution over an input sequence composed of nInputFrame frames.
+    The input tensor in forward(input) is expected to be a 3D tensor (batch_szie, sequence_length x input_frame_size).
+
+    The parameters are the following:
+
+        input_frame_size: The input frame size expected in sequences given into forward().
+        output_frame_size: The output frame size the convolution layer will produce.
+        kw: The kernel width of the convolution
+        dw: The step of the convolution. Default is 1.
+        bias: whether to include a bias. Default is True.
+
+        Here is a simple example:
+
+        inp = 5  #dimensionality of one sequence element
+        outp = 1 #number of derived features for one sequence element
+        kw = 1   #kernel only operates on one sequence element per step
+
+
+
+        >> from tnet import nn
+        >> import numpy as np
+
+        >> tconv = nn.TemporalConvolution(inp, outp, kw)
+        >> x = np.random.rand(2, 7, inp) # two sequences of 7 elements
+        >> out = tconv.forward(x)
+        >> print(out.shape)
+
+        which gives:
+        (2, 7, 1)
+    """
+
+    def __init__(self, input_frame_size, output_frame_size, kw, dw=1, bias=True):
+
+        self._input_info = InputInfo(dtype=config.floatX, shape=[kw + 1, input_frame_size])
+        self._input_frame_size = input_frame_size
+        self._output_frame_size = output_frame_size
+        self._kw = kw
+        self._dw = dw
+        self._has_bias = bias
+
+        super(TemporalConvolution, self).__init__(input_frame_size, output_frame_size, kw, 1, dw, bias=bias)
+
+    def _update_output(self, inp):
+
+        inp = self._prpare_inputs(inp)
+        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+
+        #inp = inp.dimshuffle(0, 'x', 1, 2)
+
+        return super(TemporalConvolution, self)._update_output(inp)

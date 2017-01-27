@@ -74,7 +74,7 @@ class _SpatialPooling(Module):
 
         ds = (self._kh, self._kw)
         st = (self._dh, self._dw)
-        ignore_border = self._ciel_mode
+        ignore_border = not self._ciel_mode
         padding = (self._padh, self._padw)
         mode = self._pool_mode
 

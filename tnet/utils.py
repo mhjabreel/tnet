@@ -211,6 +211,7 @@ def get_file(fname, origin, untar=False,
 
     if not os.access(datadir_base, os.W_OK):
         datadir_base = os.path.join('/tmp', '.tnet')
+    print(datadir_base)
     datadir = os.path.join(datadir_base, cache_subdir)
     if not os.path.exists(datadir):
         os.makedirs(datadir)
@@ -221,7 +222,7 @@ def get_file(fname, origin, untar=False,
     else:
         fpath = os.path.join(datadir, fname)
 
-    
+
     download = False
     if os.path.exists(fpath):
         # File found; verify integrity if a hash was provided.
