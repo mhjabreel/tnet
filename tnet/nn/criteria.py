@@ -27,7 +27,8 @@ from tnet.nn import Module
 __all__ = [
     "Criterion",
     "ClassNLLCriterion",
-    #"CrossEntropyCriterion"
+    #"CrossEntropyCriterion",
+    "BCECriterion"
 ]
 
 class Criterion(object):
@@ -54,3 +55,9 @@ class Criterion(object):
 class ClassNLLCriterion(Criterion):
     def _update_output(self, input, target):
         return -T.mean(T.log(input)[T.arange(target.shape[0]), target])
+
+
+
+class BCECriterion(Criterion):
+    def _update_output(self, input, target):
+        return -T.mean(T.nnet.binary_crossentropy(input, target))

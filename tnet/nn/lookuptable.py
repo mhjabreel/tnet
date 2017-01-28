@@ -71,7 +71,11 @@ class LookupTable(Module):
         self._W = theano.shared(self._W_values, borrow=True)
 
     def _update_output(self, inp):
-        assert type(inp) == np.ndarray and inp.dtype == np.int32
+
+        if not str(inp.dtype).startswith('int'):
+            inp = T.cast(inp, 'int32')
+        print(inp.dtype)
+        
         return self._W[inp]
 
     @property
