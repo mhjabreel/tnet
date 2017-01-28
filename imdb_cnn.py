@@ -60,7 +60,12 @@ model = nn.Sequential()
 
 # we start off with an efficient embedding layer which maps
 # our vocab indices into embedding_dims dimensions
-model.add(nn.LookupTable(max_features, embedding_dims)
+model.add(nn.LookupTable(max_features, embedding_dims))
+
+out = model.forward(X_train[0:2])
+
+print(out.shape)
+xx
 model.add(nn.Dropout(0.2))
 
 
@@ -100,6 +105,7 @@ acc_meter  = meter.AccuracyMeter()
 def on_sample_handler(args):
 
     x = args.sample["input"]
+    print(x.shape)
     x = numpy.reshape(x, (x.shape[0], 1,  28, 28))
     args.sample["input"] = x
 
