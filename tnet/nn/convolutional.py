@@ -59,8 +59,8 @@ class SpatialConvolution(Module):
 
         #stdv = 1 / math.sqrt(self._kw * self._kh * self._n_input_plane)
         stdv = np.sqrt(6. / (self._n_input_plane + self._n_output_plane))
-        self._W_values = np.array(np.random.uniform(low=-s,
-                                              high=s,
+        self._W_values = np.array(np.random.uniform(low=-stdv,
+                                              high=stdv,
                                               size=self._filter_shape),
                                               theano.config.floatX)
 
@@ -143,7 +143,7 @@ class TemporalConvolution(SpatialConvolution):
         >> print(out.shape)
 
         which gives:
-        (2, 7, 1)
+        (2, 1, 7)
     """
 
     def __init__(self, input_frame_size, output_frame_size, kw, dw=1, bias=True):
@@ -155,13 +155,18 @@ class TemporalConvolution(SpatialConvolution):
         self._dw = dw
         self._has_bias = bias
 
-        super(TemporalConvolution, self).__init__(input_frame_size, output_frame_size, kw, 1, dw, bias=bias)
+
+        super(TemporalConvolution, self).__init__(1, output_frame_size, kw, input_frame_size, dw, bias=bias)
+        self._image_shape = (None, self._n_input_plane, None, input_frame_size)
+
 
     def _update_output(self, inp):
 
         inp = self._prpare_inputs(inp)
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        if inp.ndim == 3:
+            inp = inp.dimshuffle(0, 'x', 1, 2)
 
-        #inp = inp.dimshuffle(0, 'x', 1, 2)
-
-        return super(TemporalConvolution, self)._update_output(inp)
+        out = super(TemporalConvolution, self)._update_output(inp)
+        out = T.reshape(out, (out.shape[0], out.shape[2], out.shape[3]))
+        return out

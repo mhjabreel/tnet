@@ -33,7 +33,20 @@ to_shared = theano.shared
 config = theano.config
 
 class Linear(Module):
+    """
+    Applies a linear transformation to the incoming data, i.e. y = Ax + b.
+    The input tensor given in forward(input) must be either a vector (1D tensor) or matrix (2D tensor).
+    If the input is a matrix, then each row is assumed to be an input sample of given batch.
+    The layer can be used without bias by setting bias = false.
 
+    You can create a layer in the following way:
+
+     module = nn.Linear(10, 5)  -- 10 inputs, 5 outputs
+     Usually this would be added to a network of some kind, e.g.:
+
+     mlp = nn.Sequential()
+     mlp:add(module)
+    """
     def __init__(self, input_size, output_size, has_bias=True):
         self._input_info = InputInfo(dtype=config.floatX, shape=[input_size])
 
