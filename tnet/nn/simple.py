@@ -24,6 +24,8 @@ from tnet.nn import Module, InputInfo
 
 __all__ = [
     "Flatten",
+    "Transpose",
+    "View",
     "Max",
     "Min",
     "Mean",
@@ -146,3 +148,65 @@ class Flatten(Module):
         y = T.reshape(inp, (inp.shape[0], T.prod(inp.shape) // inp.shape[0]))
 
         return y
+
+
+class Transpose(Module):
+
+    def __init__(self, *dargs):
+        assert len(dargs) > 0 #and len(*dargs) <= 4
+        assert all([type(v) == int for v in dargs])
+        assert min(*dargs) == 0
+        self._view_pattern = dargs#[v if v >= 0 else 'x' for v in dargs]
+        super(Transpose, self).__init__()
+
+    def _compile(self):
+        pass
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._prpare_inputs(inp)
+        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        return inp.dimshuffle(self._view_pattern)
+
+class View(Module):
+
+    def __init__(self, *dargs):
+        assert len(dargs) > 0 #and len(*dargs) <= 4
+        assert all([type(v) == int for v in dargs])
+        assert min(*dargs) == -1
+        c = 0
+        s = 0
+        negidx = None
+        for i, v in enumerate(dargs):
+            if v == -1:
+                c += 1
+                negidx = i
+            else:
+                s += v
+            if c > 1:
+                raise ValueError("only one dimension can be at -1")
+        self._new_shape = list(dargs)#[v if v >= 0 else 'x' for v in dargs]
+        self._non_negative_dim = s
+        self._negidx = negidx
+        super(View, self).__init__()
+
+    def _get_shape(self, inp):
+        shape = self._new_shape
+        return tuple(shape)
+
+    def _compile(self):
+
+        shape = self._new_shape
+        if not self._negidx is None:
+            shape[self._negidx] = 1
+        self.forward(np.random.random(shape).astype(config.floatX))
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._prpare_inputs(inp)
+        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        shape = self._get_shape(inp)
+        return T.reshape(inp, shape)
