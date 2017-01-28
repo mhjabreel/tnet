@@ -38,7 +38,8 @@ class SpatialConvolution(Module):
 
     def __init__(self, n_input_plane, n_output_plane, kw, kh, dw=1, dh=1, padw=0, padh=0, bias=True):
 
-        self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh + 1, kw + 1])
+        if not hasattr(self, '_input_info'):
+            self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh , kw ])
         self._n_input_plane = n_input_plane
         self._n_output_plane = n_output_plane
         self._kw = kw
@@ -143,12 +144,12 @@ class TemporalConvolution(SpatialConvolution):
         >> print(out.shape)
 
         which gives:
-        (2, 1, 7)
+        (2, 7, 1)
     """
 
     def __init__(self, input_frame_size, output_frame_size, kw, dw=1, bias=True):
 
-        self._input_info = InputInfo(dtype=config.floatX, shape=[kw + 1, input_frame_size])
+        self._input_info = InputInfo(dtype=config.floatX, shape=[kw, input_frame_size])
         self._input_frame_size = input_frame_size
         self._output_frame_size = output_frame_size
         self._kw = kw
@@ -156,17 +157,20 @@ class TemporalConvolution(SpatialConvolution):
         self._has_bias = bias
 
 
-        super(TemporalConvolution, self).__init__(1, output_frame_size, kw, input_frame_size, dw, bias=bias)
+        super(TemporalConvolution, self).__init__(1, output_frame_size, input_frame_size, kw, 1, dw, bias=bias)
         self._image_shape = (None, self._n_input_plane, None, input_frame_size)
 
 
     def _update_output(self, inp):
 
+
         inp = self._prpare_inputs(inp)
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
-        if inp.ndim == 3:
-            inp = inp.dimshuffle(0, 'x', 1, 2)
+        assert inp.ndim == 3
+
+        inp = inp.dimshuffle(0, 'x', 1, 2)
 
         out = super(TemporalConvolution, self)._update_output(inp)
-        out = T.reshape(out, (out.shape[0], out.shape[2], out.shape[3]))
+        out = T.reshape(out, (out.shape[0], out.shape[1], out.shape[2]))
+        out = out.dimshuffle(0, 2, 1)
         return out
