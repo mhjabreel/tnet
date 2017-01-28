@@ -44,8 +44,8 @@ class Linear(Module):
      module = nn.Linear(10, 5)  -- 10 inputs, 5 outputs
      Usually this would be added to a network of some kind, e.g.:
 
-     mlp = nn.Sequential()
-     mlp:add(module)
+     net = nn.Sequential()
+     net.add(module)
     """
     def __init__(self, input_size, output_size, has_bias=True):
         self._input_info = InputInfo(dtype=config.floatX, shape=[input_size])
