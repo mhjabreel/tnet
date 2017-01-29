@@ -15,6 +15,7 @@
 
 from __future__ import absolute_import
 
+from tnet.core import *
 from tnet import nn
 from tnet import dataset
 from tnet import meter

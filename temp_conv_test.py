@@ -8,6 +8,6 @@ from tnet import nn
 import numpy as np
 
 tconv = nn.TemporalConvolution(5, 10, 2)
-x = np.random.rand(2, 7, 5).astype('float64') # two sequences of 7 elements
+x = np.random.rand(2, 7, 5).astype('float32') # two sequences of 7 elements
 out = tconv.forward(x)
 print(out.shape)

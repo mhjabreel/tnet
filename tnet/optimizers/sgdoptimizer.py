@@ -15,6 +15,7 @@
 
 from __future__ import absolute_import
 
+import tnet
 import time
 import numpy as np
 import theano
@@ -51,17 +52,28 @@ class SGDOptimizer(Optimizer):
 
 
         self._p_y_given_x = network(x)
+
         self._cost = criterion(self._p_y_given_x, y)
+        params = []
+        g_params = []
+        for p in network.parameters:
 
-        params = network.parameters
-        g_params = [T.grad(cost=self._cost, wrt=p) for p in network.parameters]
-        updates = [(p, p - learning_rate * g_p) for p, g_p in zip(network.parameters, g_params)]
+            if isinstance(p, tnet.DifferentiableVariable):
+                g = T.grad(cost=self._cost, wrt=p)
+                params.append(p)
+                g_params.append(g)
 
+
+        updates = [(p, p - learning_rate * g) for p, g in zip(params, g_params)]
+        bw_updates =  [(p.grad, g) for p, g in zip(params, g_params)]
         self._train_fn = theano.function(
             inputs=[x, y],
             outputs=[self._cost, self._p_y_given_x],
-            updates=updates
+            updates=bw_updates
         )
+
+        #self._backward_fn = theano.function(inputs=[x, y], outputs=[], updates=bw_updates)
+        self._update_fn = theano.function(inputs=[x, y], outputs=[], updates=updates)
 
 
 
@@ -80,10 +92,9 @@ class SGDOptimizer(Optimizer):
             for sample in iterator():
 
                 avg_cost, prob = self._train_fn(sample["input"], sample["target"])
-
-                #print(minibatch_avg_cost)
                 self.on_forward.invoke(OnForwardEventArgs(epoch, avg_cost, prob, sample["target"]))
                 self.on_backward.invoke(TrainingEventArgs(epoch))
+                self._update_fn(sample["input"], sample["target"])
                 self.on_update.invoke(TrainingEventArgs(epoch))
 
 

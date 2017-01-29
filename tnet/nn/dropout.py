@@ -45,12 +45,13 @@ class Dropout(Module):
 
 
     def _update_output(self, inp):
-
-        if self.running_mode == 'eval':
-            return inp
-
         inp = self._prpare_inputs(inp)
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+
+        if not self.is_in_training:
+            return inp
+
+
         seed = np.random.randint(1, 10e6)
         rng = RandomStreams(seed=seed)
 

@@ -19,7 +19,7 @@ from keras.datasets import imdb
 
 
 from tnet import nn
-from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
+from tnet.dataset import Dataset, BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
 from tnet.optimizers import *
 from tnet.optimizers.sgdoptimizer import SGDOptimizer
@@ -62,20 +62,15 @@ model = nn.Sequential()
 # our vocab indices into embedding_dims dimensions
 model.add(nn.LookupTable(max_features, embedding_dims))
 
-out = model.forward(X_train[0:2])
-
-print(out.shape)
-xx
 model.add(nn.Dropout(0.2))
-
 
 # we add a Convolution1D, which will learn nb_filter
 # word group filters of size filter_length:
 model.add(nn.TemporalConvolution(embedding_dims, nb_filter, filter_length))
+
 model.add(nn.ReLU())
 # we use max pooling:
 model.add(nn.Max(0, 2))
-
 
 # We add a vanilla hidden layer:
 model.add(nn.Linear(250, hidden_dims))
@@ -84,7 +79,10 @@ model.add(nn.ReLU())
 
 # We project onto a single unit output layer, and squash it with a sigmoid:
 model.add(nn.Linear(hidden_dims, 1))
+model.add(nn.Sum(0, 1)) # flatten
 model.add(nn.Sigmoid())
+
+
 
 def get_iterator(data):
     data = BatchDataset(
@@ -97,21 +95,16 @@ def get_iterator(data):
 
     return iterator
 
-
-
 loss_meter  = meter.AverageValueMeter()
-acc_meter  = meter.AccuracyMeter()
+acc_meter  = meter.BinaryAccuracyMeter()
 
 def on_sample_handler(args):
+    print(args.sample["target"])
 
-    x = args.sample["input"]
-    print(x.shape)
-    x = numpy.reshape(x, (x.shape[0], 1,  28, 28))
-    args.sample["input"] = x
 
 
 def on_start_poch_handler(args):
-    model.running_mode = 'train'
+    model.training()
     loss_meter.reset()
     acc_meter.reset()
 
@@ -121,21 +114,35 @@ def on_forward_handler(args):
     loss_meter.add(args.criterion_output)
     acc_meter.add(args.network_output, args.target)
 
-    sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+    sys.stderr.write('epoch: {}; avg. loss: {:2.4f}; avg. acc: {:2.4f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     sys.stderr.flush()
 
 def on_end_epoch_handler(args):
-    print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+    print('epoch: {}; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     print("elapsed time: %2.2f seconds" % (args.end_time - args.start_time))
 
 
 
+class IMDBTDataset(Dataset):
+    """docstring for MNISTDataset."""
+    def __init__(self, data):
+        super(IMDBTDataset, self).__init__()
+        self.add_attribute("input", np.ndarray)
+        self.add_attribute("target", np.ndarray)
+        self._dataset = data
 
-iterator = get_iterator([X_train, y_train])
+    def _get(self, idx):
+        return self._dataset[0][idx], self._dataset[1][idx].astype(np.int32)
 
-iterator.on_sample += on_sample_handler
+    @property
+    def size(self):
+        return self._dataset[0].shape[0]
 
-model.running_mode = 'train'
+iterator = get_iterator(IMDBTDataset([X_train, y_train]))
+
+#iterator.on_sample += on_sample_handler
+
+
 
 criterion = nn.BCECriterion()
 
@@ -147,18 +154,24 @@ optimizer.on_end_epoch += on_end_epoch_handler
 
 optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=nb_epoch)
 
-model.running_mode = 'eval'
+model.evaluate()
 
 print("Testing")
 
 acc_meter.reset()
 loss_meter.reset()
 
-p_y_given_x = model.forward(X_test)
-loss = criterion.forward(p_y_given_x, y_test)
-loss_meter.add(loss)
-acc_meter.add(p_y_given_x, y_test)
+iterator = get_iterator(IMDBTDataset([X_test, y_test]))
 
+for sample in iterator():
+    X = sample["input"]
+    y = sample["target"]
+    p_y_given_x = model.forward(X)
+    loss = criterion.forward(p_y_given_x, y)
+    loss_meter.add(loss)
+    acc_meter.add(p_y_given_x, y)
 
+    sys.stderr.write('testing; avg. loss: {:2.4f}; avg. acc: {:2.4f}\r'.format(loss_meter.value[0], acc_meter.value))
+    sys.stderr.flush()
 
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
+print('testing; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(loss_meter.value[0], acc_meter.value))

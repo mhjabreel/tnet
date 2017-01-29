@@ -22,7 +22,35 @@ from tnet.meter import Meter
 import numpy as np
 import math
 
-__all__ = ["AccuracyMeter"]
+__all__ = ["AccuracyMeter", "BinaryAccuracyMeter"]
+
+class BinaryAccuracyMeter(Meter):
+    def __init__(self, error=False):
+        super(BinaryAccuracyMeter, self).__init__()
+        self._error = error
+
+
+    def reset(self):
+        self._sum = 0
+        self._count = 0
+
+    def add(self, output, target):
+
+
+
+        assert type(output) == type(target) == np.ndarray
+        output = np.round(output)
+        score = (target == output)
+
+        self._sum += score.sum()
+        self._count += len(score)
+
+    @property
+    def value(self):
+        acc = self._sum / self._count * 100
+        if self._error:
+            return 100 - acc
+        return acc
 
 class AccuracyMeter (Meter):
 
@@ -38,7 +66,10 @@ class AccuracyMeter (Meter):
 
     def add(self, output, target):
 
+
+
         assert type(output) == type(target) == np.ndarray
+
 
         if target.ndim == 2:
             assert target.max() == 1 and target.min() == 0 # one hot check
@@ -46,6 +77,7 @@ class AccuracyMeter (Meter):
 
         if output.ndim == 2:
             output = np.argmax(output, axis=1)
+
 
         score = (target == output)
 

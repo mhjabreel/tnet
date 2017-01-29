@@ -60,4 +60,6 @@ class ClassNLLCriterion(Criterion):
 
 class BCECriterion(Criterion):
     def _update_output(self, input, target):
-        return -T.mean(T.nnet.binary_crossentropy(input, target))
+
+        #loss = T.mul(target, T.log(input)) + T.mul(1 - target, T.log(1 - input))
+        return T.mean(T.nnet.binary_crossentropy(input, target))

@@ -16,129 +16,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
+import tnet
 
-from tnet import nn
-from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
-from tnet.dataset.custom_datasets import mnist
-from tnet.optimizers import *
-from tnet.optimizers.sgdoptimizer import SGDOptimizer
-from tnet import meter
-from tnet.utils import as_shared
-
-import six.moves.cPickle as pickle
-import gzip
-import os
-
-import os
-import sys
-import timeit
-
-import numpy
-
-#numpy.random.seed(1337)  # for reproducibility
-
-
-
-def get_iterator(data):
-    data = BatchDataset(
-        dataset=ShuffleDataset(
-            dataset=data
-        ),
-        batch_size=128
-    )
-    return DatasetIterator(data)
-
-
-
-loss_meter  = meter.AverageValueMeter()
-acc_meter  = meter.AccuracyMeter()
-
-def on_sample_handler(args):
-    print("H")
-    x = args.sample["input"]
-    x = numpy.reshape(x, (x.shape[0], 1, 28, 28))
-    args.sample["input"] = x
-    print(args.sample["input"].shape)
-
-
-def on_start_poch_handler(args):
-    model.running_mode = 'train'
-    loss_meter.reset()
-    acc_meter.reset()
-
-
-def on_forward_handler(args):
-
-    loss_meter.add(args.criterion_output)
-    acc_meter.add(args.network_output, args.target)
-
-    sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    sys.stderr.flush()
-
-def on_end_epoch_handler(args):
-    print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("Validating")
-
-    model.running_mode = 'eval'
-    loss_meter.reset()
-    acc_meter.reset()
-    p_y_given_x = model.forward(X_test)
-    loss = criterion.forward(p_y_given_x, y_test)
-    loss_meter.add(loss)
-    acc_meter.add(p_y_given_x, y_test)
-
-
-
-    print('eval; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
-
-
-
-train_dataset, [X_test, y_test] = mnist.get_data()
-
-iterator = get_iterator(train_dataset)
-
-iterator.on_sample += lambda a : print("Hi")
-
-print (iterator.on_sample.handlers)
-
-model = nn.Sequential() \
-    .add(nn.SpatialConvolution(1, 32, 3, 3)) \
-    .add(nn.ReLU()) \
-    .add(nn.SpatialConvolution(32, 32, 3, 3)) \
-    .add(nn.ReLU()) \
-    .add(nn.SpatialMaxPooling(2, 2)) \
-    .add(nn.Dropout(0.25)) \
-    .add(nn.Flatten()) \
-    .add(nn.Linear(32 * 12 * 12, 128)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.5)) \
-    .add(nn.Linear(128, 10)) \
-    .add(nn.SoftMax())
-
-model.running_mode = 'train'
-
-criterion = nn.ClassNLLCriterion()
-
-optimizer = SGDOptimizer()
-optimizer.on_forward += on_forward_handler
-optimizer.on_start_poch += on_start_poch_handler
-optimizer.on_end_epoch += on_end_epoch_handler
-
-
-optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=20)
-
-model.running_mode = 'eval'
-
-print("Testing")
-
-acc_meter.reset()
-loss_meter.reset()
-
-p_y_given_x = model.forward(X_test)
-loss = criterion.forward(p_y_given_x, y_test)
-loss_meter.add(loss)
-acc_meter.add(p_y_given_x, y_test)
-
-
-
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
+x = tnet.DifferentiableVariable(np.random.randint(0, 10, (2,3,4)))
+y = x + 2
+print(y)
+print(x)
+x.zero()
+print(x)
+print(x.grad)
+print(y.eval())

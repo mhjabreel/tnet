@@ -46,14 +46,14 @@ class _GobalPooling(Module):
         self._dimension = dimension
         self._n_input_dim = n_input_dim
         self._pool_fn = pool_fn
-        super(Max, self).__init__()
+        super(_GobalPooling, self).__init__()
 
 
     def _get_positive_index(self, inp):
         d = self._dimension
         if  d < 0:
             d = inp.ndim + d + 1
-        elif not self.n_input_dim is None and inp.ndim == (self.n_input_dim + 1):
+        elif not self._n_input_dim is None and inp.ndim == (self._n_input_dim + 1):
             d = d + 1
         return d
 
@@ -97,7 +97,7 @@ class Min(_GobalPooling):
 
     def __init__(self, dimension, n_input_dim=None):
 
-        super(Max, self).__init__(T.min, dimension, n_input_dim)
+        super(Min, self).__init__(T.min, dimension, n_input_dim)
 
 class Mean(_GobalPooling):
 
@@ -112,7 +112,7 @@ class Mean(_GobalPooling):
 
     def __init__(self, dimension, n_input_dim=None):
 
-        super(Max, self).__init__(T.mean, dimension, n_input_dim)
+        super(Mean, self).__init__(T.mean, dimension, n_input_dim)
 
 
 class Sum(_GobalPooling):
@@ -128,7 +128,7 @@ class Sum(_GobalPooling):
 
     def __init__(self, dimension, n_input_dim=None):
 
-        super(Max, self).__init__(T.sum, dimension, n_input_dim)
+        super(Sum, self).__init__(T.sum, dimension, n_input_dim)
 
 class Flatten(Module):
 

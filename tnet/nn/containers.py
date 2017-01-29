@@ -57,6 +57,7 @@ class Container(Module):
         for m in self._modules:
             p = m.parameters
             if not p is None:
+                #params.append(p)
                 params += p
         return params
 
@@ -75,22 +76,26 @@ class Container(Module):
 
 
     def _set_running_mode(self, mode):
-        assert mode in ['train', 'eval']
-        self._mode = mode
+
+        self._running_mode = mode
 
         for m in self._modules:
-            m.running_mode = mode
+            m._set_running_mode(mode)
 
 class Sequential(Container):
 
     def __init__(self):
         super(Sequential, self).__init__()
 
+
     def _update_output(self, inp):
 
+        self.input = []
         last_output = self._prpare_inputs(inp)
+        self.input.append(last_output)
         for m in self._modules:
             last_output = m(last_output)
+            self.input.append(last_output)
 
         return last_output
 
@@ -100,4 +105,3 @@ class Sequential(Container):
         if len(self._modules) > 0:
             m = self._modules[0]
             return m.input_info
-    

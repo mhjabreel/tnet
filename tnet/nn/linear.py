@@ -19,7 +19,7 @@ from __future__ import print_function
 import numpy as np
 import theano
 import math
-
+import tnet
 from tnet.nn import Module, InputInfo
 
 __all__ = [
@@ -67,7 +67,7 @@ class Linear(Module):
                                               size=(nin, nout)),
                             theano.config.floatX)
 
-        self._W = theano.shared(self._W_values, borrow=True)
+        self._W = tnet.DifferentiableVariable(self._W_values)#theano.shared(self._W_values, borrow=True)
 
 
         if self._has_bias:
@@ -77,7 +77,7 @@ class Linear(Module):
                                                   size=(nout)),
                                 theano.config.floatX)
 
-            self._b = theano.shared(self._b_values, borrow=True)
+            self._b = tnet.DifferentiableVariable(self._b_values)#, borrow=True)
 
 
 
@@ -112,3 +112,6 @@ class Linear(Module):
         self._W_values = values[0]
         if self._has_bias:
             self._b_values = values[1]
+
+    def get_grad_prams_values(self):
+        return self._W.grad

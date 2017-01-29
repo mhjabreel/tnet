@@ -58,6 +58,18 @@ def get_iterator(data):
 loss_meter  = meter.AverageValueMeter()
 acc_meter  = meter.AccuracyMeter()
 
+m1 = nn.Linear(28 * 28, 512)
+#get_grad_prams_values
+model = nn.Sequential() \
+    .add(m1) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 10)) \
+    .add(nn.SoftMax())
+
 def on_sample_handler(args):
 
     print(args.sample["target"][0])
@@ -66,7 +78,7 @@ def on_sample_handler(args):
 
 
 def on_start_poch_handler(args):
-    model.running_mode = 'train'
+    model.training()
     loss_meter.reset()
     acc_meter.reset()
 
@@ -80,6 +92,7 @@ def on_forward_handler(args):
     sys.stderr.flush()
 
 def on_end_epoch_handler(args):
+    print(model.parameters[0].grad.value.max())
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
 
 
@@ -91,17 +104,8 @@ iterator = get_iterator(train_dataset)
 #iterator.on_sample += on_sample_handler
 
 
-model = nn.Sequential() \
-    .add(nn.Linear(28 * 28, 512)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.2)) \
-    .add(nn.Linear(512, 512)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.2)) \
-    .add(nn.Linear(512, 10)) \
-    .add(nn.SoftMax())
 
-model.running_mode = 'train'
+model.training()
 
 criterion = nn.ClassNLLCriterion()
 
@@ -113,7 +117,7 @@ optimizer.on_end_epoch += on_end_epoch_handler
 
 optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=20)
 
-model.running_mode = 'eval'
+model.evaluate()
 
 print("Testing")
 

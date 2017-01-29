@@ -51,7 +51,7 @@ class LookupTable(Module):
 
         self._n_index = n_index
         self._n_output = n_output
-
+        self._input_info = InputInfo(dtype='int32', shape=[None])
         super(LookupTable, self).__init__()
 
 
@@ -74,8 +74,8 @@ class LookupTable(Module):
 
         if not str(inp.dtype).startswith('int'):
             inp = T.cast(inp, 'int32')
-        print(inp.dtype)
         
+
         return self._W[inp]
 
     @property

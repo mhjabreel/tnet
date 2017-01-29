@@ -36,11 +36,9 @@ config = theano.config
 
 
 
-class RunningPhases(object):
-    """docstring for RunningPhases."""
-    def __init__(self, arg):
-        super(RunningPhases, self).__init__()
-        self.arg = arg
+class RunningMode(object):
+    """docstring for RunningMode."""
+    TRAIN, EVAL = True, False
 
 
 class InputInfo(object):
@@ -57,7 +55,7 @@ class Module(object):
         if not hasattr(self, '_input_info'):
             self._input_info = None
 
-        self._mode = 'train'
+        self._running_mode = RunningMode.EVAL
 
         self._declare(**kwargs)
         self._compile(**kwargs)
@@ -104,11 +102,16 @@ class Module(object):
     def _update_output(self, input_or_inputs):
 
         input_or_inputs = self._prpare_inputs(input_or_inputs)
+
+        self.input = input_or_inputs
+        
         return input_or_inputs
 
 
 
+
     def __call__(self, input_or_inputs):
+
         return self._update_output(input_or_inputs)
 
 
@@ -118,6 +121,20 @@ class Module(object):
         self._output = out.eval()
 
         return self._output
+
+
+
+
+
+    def _set_running_mode(self, mode):
+        self._running_mode = mode
+
+
+    def training(self):
+        self._set_running_mode(RunningMode.TRAIN)
+
+    def evaluate(self):
+        self._set_running_mode(RunningMode.EVAL)
 
     @property
     def output(self):
@@ -137,16 +154,12 @@ class Module(object):
 
     @property
     def running_mode(self):
-        return self._mode
+        return self._runing_mode
 
-    def _set_running_mode(self, mode):
-        self._mode = mode
+    @property
+    def is_in_training(self):
+        return self._running_mode == RunningMode.TRAIN
 
-
-    @running_mode.setter
-    def running_mode(self, mode):
-        assert mode in ['train', 'eval']
-        self._set_running_mode(mode)
 
     @property
     def input_info(self):
