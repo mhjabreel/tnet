@@ -19,6 +19,7 @@ import tnet
 import numpy as np
 import theano
 import math
+from collections import OrderedDict
 
 from tnet.optimizers import Optimizer
 from tnet.base import EventArgs, EventHook
@@ -68,22 +69,27 @@ class AdadeltaOptimizer(Optimizer):
     def _get_updates(self, params, inputs):
 
         lr = inputs[0]
-        accumulators = [p.zero_like() for p in params]
-        delta_accumulators = [p.zero_like() for p in params]
-        updates = []
-        for p, a, d_a in zip(params, accumulators, delta_accumulators):
+        step = theano.shared(0, name="step")
+        updates = OrderedDict()
+
+        for p in params:
+
+            #define accumulator and delta_accumulator
+            a = p.zero_like()
+            d_a = p.zero_like()
 
             # update accumulator
             new_a = self.rho * a + (1 - self.rho) * (p.grad ** 2)
-            updates.append((a, new_a))
+            updates[a] = new_a
 
             # use the new accumulator and the *old* delta_accumulator
             update = p.grad * T.sqrt(d_a + self.epsilon) / T.sqrt(new_a + self.epsilon)
             new_p = p - lr * update
-            updates.append((p, new_p))
+            updates[p] = new_p
 
             # update delta_accumulator
             new_d_a = self.rho * d_a + (1 - self.rho) * (update ** 2)
-            updates.append((d_a, new_d_a))
+            updates[d_a] = new_d_a
+        updates[step] = step + 1
 
         return updates

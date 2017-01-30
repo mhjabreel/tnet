@@ -42,6 +42,10 @@ import numpy
 
 numpy.random.seed(1337)  # for reproducibility
 
+import theano
+
+theano.config.floatX = 'float32'
+theano.config.mode = 'FAST_RUN'
 
 
 def get_iterator(data):
@@ -110,7 +114,7 @@ model.training()
 
 criterion = nn.ClassNLLCriterion()
 
-optimizer = SGDOptimizer()
+optimizer = AdamOptimizer()
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler

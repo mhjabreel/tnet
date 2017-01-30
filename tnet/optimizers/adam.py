@@ -19,6 +19,7 @@ import tnet
 import numpy as np
 import theano
 import math
+from collections import OrderedDict
 
 from tnet.optimizers import Optimizer
 from tnet.base import EventArgs, EventHook
@@ -28,6 +29,9 @@ func = theano.function
 to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
+
+def numpy_floatX(data):
+    return np.asarray(data, dtype=config.floatX)
 
 class AdamOptimizer(Optimizer):
 
@@ -76,28 +80,25 @@ class AdamOptimizer(Optimizer):
     def _get_updates(self, params, inputs):
 
         lr = inputs[0]
-        iterations = self.iterations
 
-        updates = [(self.iterations, self.iterations + 1)]
+        step = tnet.Variable(np.array(0.0).astype(theano.config.floatX))
+        updates = OrderedDict()
 
-        t = iterations + 1
-        lr_t = lr * (T.sqrt(1. - T.pow(self.beta_2, t)) /
-                     (1. - T.pow(self.beta_1, t)))
+        t = step + 1
+        a_t = lr * T.sqrt(1. - self.beta_2 ** t)/(1. - self.beta_1 ** t)
 
+        for p in params:
+            value = p.get_value(borrow=True)
+            m_prev = p.zero_like()
+            v_prev = p.zero_like()
 
-        ms = [p.zero_like() for p in params]
-        vs = [p.zero_like() for p in params]
+            m_t = self.beta_1 * m_prev + (1.  -self.beta_1) * p.grad
+            v_t = self.beta_2 * v_prev + (1. - self.beta_2) * p.grad ** 2
+            d_p = a_t * m_t / (T.sqrt(v_t) + self.epsilon)
 
+            updates[m_prev] = m_t
+            updates[v_prev] = v_t
+            updates[p] = p - d_p
 
-        for p, m, v in zip(params, ms, vs):
-            m_t = (self.beta_1 * m) + (1. - self.beta_1) * p.grad
-            v_t = (self.beta_2 * v) + (1. - self.beta_2) * T.square(p.grad)
-            p_t = p - lr_t * m_t / (T.sqrt(v_t) + self.epsilon)
-
-            updates.append((m, m_t))
-            updates.append((v, v_t))
-
-            new_p = p_t
-
-            updates.append((p, new_p))
+        updates[step] = t
         return updates

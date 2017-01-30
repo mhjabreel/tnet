@@ -19,6 +19,7 @@ import tnet
 import numpy as np
 import theano
 import math
+from collections import OrderedDict
 
 from tnet.optimizers import *
 from tnet.base import EventArgs, EventHook
@@ -57,5 +58,11 @@ class SGDOptimizer(Optimizer):
 
     def _get_updates(self, params, inputs):
         lr = inputs[0]
-        updates = [(p, p - lr * p.grad) for p in params]
+        step = tnet.Variable(np.array(0.0).astype(theano.config.floatX))
+        updates = OrderedDict()
+
+        for p in params:
+            updates[p] = p - lr * p.grad
+        updates[step] = step + 1
+
         return updates
