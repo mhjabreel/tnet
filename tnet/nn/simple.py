@@ -52,8 +52,7 @@ class _GobalPooling(Module):
 
 
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(_GobalPooling, self)._update_output(inp)
         d = self._get_positive_index(inp)
         return self._pool_fn(inp, axis=d)
 
@@ -132,8 +131,7 @@ class Flatten(Module):
 
 
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(Flatten, self)._update_output(inp)
 
         y = T.reshape(inp, (inp.shape[0], T.prod(inp.shape) // inp.shape[0]))
 
@@ -155,8 +153,7 @@ class Transpose(Module):
         pass
 
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(Transpose, self)._update_output(inp)
         return inp.dimshuffle(self._view_pattern)
 
 class View(Module):
@@ -196,8 +193,7 @@ class View(Module):
         pass
 
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(View, self)._update_output(inp)
         shape = self._get_shape(inp)
         return T.reshape(inp, shape)
 

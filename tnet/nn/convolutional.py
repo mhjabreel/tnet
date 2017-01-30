@@ -39,7 +39,8 @@ class SpatialConvolution(Module):
     def __init__(self, n_input_plane, n_output_plane, kw, kh, dw=1, dh=1, padw=0, padh=0, bias=True):
 
         if not hasattr(self, '_input_info'):
-            self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh , kw ])
+            self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh , kw])
+
         self._n_input_plane = n_input_plane
         self._n_output_plane = n_output_plane
         self._kw = kw
@@ -78,9 +79,8 @@ class SpatialConvolution(Module):
 
     def _update_output(self, inp):
 
-        inp = self._prpare_inputs(inp)
+        inp = super(SpatialConvolution, self)._update_output(inp)
 
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
 
         y = T.nnet.conv2d(inp, self._W,
                           subsample=(self._dh, self._dw),
@@ -164,7 +164,7 @@ class TemporalConvolution(SpatialConvolution):
     def _update_output(self, inp):
 
 
-        inp = self._prpare_inputs(inp)
+        inp = self._check_input(inp)
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
         assert inp.ndim == 3
 

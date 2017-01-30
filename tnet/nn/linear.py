@@ -82,15 +82,12 @@ class Linear(Module):
 
 
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(Linear, self)._update_output(inp)
 
         if inp.ndim == 1 or inp.ndim == 2:
             y = T.dot(inp, self._W)
             if self._has_bias:
                 y += self._b
-
             return y
         else:
             raise Exception("input must be vector or matrix")

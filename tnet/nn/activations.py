@@ -29,6 +29,7 @@ __all__ = [
     "Sigmoid",
     "HardSigmoid",
     "SoftMax",
+    "LogSoftMax",
     "SoftPlus",
     "Threshold",
     "ReLU"
@@ -54,9 +55,7 @@ class _Activation(Module):
         #self.forward(mock_input)
 
     def _update_output(self, inp):
-
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(_Activation, self)._update_output(inp)
         return self._func(inp)
 
 
@@ -81,6 +80,10 @@ class HardSigmoid(_Activation):
 class SoftMax(_Activation):
     def __init__(self):
         super(SoftMax, self).__init__(T.nnet.softmax)
+
+class LogSoftMax(_Activation):
+    def __init__(self):
+        super(LogSoftMax, self).__init__(T.nnet.logsoftmax)
 
 class SoftPlus(_Activation):
     def __init__(self):

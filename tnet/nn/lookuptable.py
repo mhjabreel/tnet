@@ -72,9 +72,11 @@ class LookupTable(Module):
 
     def _update_output(self, inp):
 
+        inp = super(LookupTable, self)._update_output(inp)
+
         if not str(inp.dtype).startswith('int'):
             inp = T.cast(inp, 'int32')
-        
+
 
         return self._W[inp]
 

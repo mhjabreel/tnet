@@ -40,13 +40,9 @@ class Dropout(Module):
         super(Dropout, self).__init__()
 
 
-    def _declare(self):
-        pass
-
-
     def _update_output(self, inp):
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+
+        inp = super(Dropout, self)._update_output(inp)
 
         if not self.is_in_training:
             return inp

@@ -69,8 +69,7 @@ class _SpatialPooling(Module):
 
     def _update_output(self, inp):
 
-        inp = self._prpare_inputs(inp)
-        assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
+        inp = super(_SpatialPooling, self)._update_output(inp)
 
         ds = (self._kh, self._kw)
         st = (self._dh, self._dw)

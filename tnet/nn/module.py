@@ -76,9 +76,9 @@ class Module(object):
 
 
 
-    def _prpare_inputs(self, input_or_inputs):
-        type_of_input = type(input_or_inputs)
+    def _check_input(self, input_or_inputs):
 
+        type_of_input = type(input_or_inputs)
         if type_of_input == list or type_of_input == tuple:
 
             type_of_inputs = [type(inp) for inp in input_or_inputs]
@@ -89,7 +89,7 @@ class Module(object):
                                          isinstance(t, T.TensorConstant) \
                                             for t in type_of_inputs])
             if not all_types_are_coorect:
-                raise  Exception("Wrong types are passed")
+                raise  ValueError("Wrong types are passed")
 
             input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else \
                                inp for inp in input_or_inputs]
@@ -97,13 +97,16 @@ class Module(object):
             input_or_inputs = to_tensor(input_or_inputs)
         else:
             if not (type_of_input == T.TensorVariable or type_of_input == T.TensorConstant):
-                raise  Exception("Wrong types are passed")
+                raise  ValueError("Wrong types are passed")
 
         return input_or_inputs
 
     def _update_output(self, input_or_inputs):
 
-        input_or_inputs = self._prpare_inputs(input_or_inputs)
+        input_or_inputs = self._check_input(input_or_inputs)
+        assert isinstance(input_or_inputs, tnet.Variable) or \
+               isinstance(input_or_inputs, T.TensorConstant) or \
+               isinstance(input_or_inputs, T.TensorVariable)
 
         self.input = input_or_inputs
 
