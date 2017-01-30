@@ -69,7 +69,7 @@ class OnBackwardEventArgs(TrainingEventArgs):
 
 class Optimizer(object):
 
-    def __init__(self):
+    def __init__(self, model, criterion):
 
         self.on_start = EventHook()
         self.on_end = EventHook()
@@ -81,13 +81,50 @@ class Optimizer(object):
         self.on_end_epoch = EventHook()
         self.on_update = EventHook()
 
+        self._model = model
+        self._criterion = criterion
 
-    def _get_train_fn(self, network, criterion):
+
+    def _initialization(self):
+        if not network.input_info is None:
+            #raise ValueError("The passed network has no specific input")
+
+            inf = network.input_info
+            ndim = len(inf.shape) + 1
+
+            broadcast = (False,) * ndim
+            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+        else:
+            x = T.matrix('x')
+
+        y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
+                
         raise NotImplementedError
 
-    def train(self, network, criterion, dataset_iterator, config={}):
+    def train(self, network, criterion, iterator, config):
+        self._get_train_fn(network, criterion, learning_rate)
 
-        pass
+        self.on_start.invoke(EventArgs())
+        epoch = 0
+
+        while epoch < maxepoch:
+
+            epoch += 1
+            start_time = time.time()
+            self.on_start_poch.invoke(OnStartEpochEventArgs(epoch, start_time))
+
+            for sample in iterator():
+
+                avg_cost, prob = self._train_fn(sample["input"], sample["target"])
+                self.on_forward.invoke(OnForwardEventArgs(epoch, avg_cost, prob, sample["target"]))
+                self.on_backward.invoke(TrainingEventArgs(epoch))
+                self._update_fn(sample["input"], sample["target"])
+                self.on_update.invoke(TrainingEventArgs(epoch))
+
+
+            self.on_end_epoch.invoke(OnEndEpochEventArgs(epoch, start_time, time.time()))
+
+        self.on_end.invoke(EventArgs())
 
 
     def test(self, network, criterion, dataset_iterator):
