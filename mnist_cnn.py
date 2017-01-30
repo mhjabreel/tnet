@@ -134,7 +134,7 @@ model.training()
 
 criterion = nn.ClassNLLCriterion()
 
-optimizer = SGDOptimizer()
+optimizer = RMSpropOptimizer()
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler
@@ -142,7 +142,7 @@ trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 model.training()
-trainer.train(iterator, learning_rate=0.1,  max_epoch=12)
+trainer.train(iterator, max_epoch=12)
 
 model.evaluate()
 

@@ -33,7 +33,7 @@ __all__ = ["Variable", "DifferentiableVariable"]
 
 class Variable(_tensor_py_operators, SharedVariable):
     """docstring for Variable."""
-    def __init__(self, value):
+    def __init__(self, value, name=None):
 
         if isinstance(value, list):
             pass
@@ -43,7 +43,7 @@ class Variable(_tensor_py_operators, SharedVariable):
 
         super(Variable, self).__init__(type=type,
                                 value=value,
-                                name=None,
+                                name=name,
                                 strict=True,
                                 allow_downcast=True)
 
@@ -62,9 +62,11 @@ class Variable(_tensor_py_operators, SharedVariable):
 
 
 
-    def zero_like(self):
-        super(Variable, self).zero()
-        return self
+    def zero_like(self, name=None):
+
+        obj = Variable(self.get_value(), name)
+        obj.zero()
+        return obj
 
     def clone(self):
         cp = self.__class__(self.get_value())
@@ -81,6 +83,7 @@ class Variable(_tensor_py_operators, SharedVariable):
 
 class DifferentiableVariable(Variable):
     """docstring for DifferentiableVariable."""
-    def __init__(self, value):
-        super(DifferentiableVariable, self).__init__(value)
-        self.grad = Variable(value).zero_like()
+    def __init__(self, value, name=None):
+        super(DifferentiableVariable, self).__init__(value, name)
+        gname = name + "_grad" if not name is None else None
+        self.grad = self.zero_like(gname)

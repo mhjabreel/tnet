@@ -16,3 +16,7 @@
 from __future__ import absolute_import
 from tnet.optimizers.optimizer import *
 from tnet.optimizers.sgdoptimizer import *
+from tnet.optimizers.adadelta import *
+from tnet.optimizers.adagrad import *
+from tnet.optimizers.adam import *
+from tnet.optimizers.rmsprop import *

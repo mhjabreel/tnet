@@ -20,23 +20,35 @@ import numpy as np
 import theano
 import math
 
-from tnet.optimizers import *
+from tnet.optimizers import Optimizer
 from tnet.base import EventArgs, EventHook
 
 T  = theano.tensor
-func = theano.function
-to_tensor = T.as_tensor_variable
-to_shared = theano.shared
-config = theano.config
-
-class SGDOptimizer(Optimizer):
 
 
-    def __init__(self, learning_rate=0.01):
-        super(SGDOptimizer, self).__init__()
+class RMSpropOptimizer(Optimizer):
+
+    """RMSProp optimizer. rmsprop: Divide the gradient by a running average of its recent magnitude. (http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)
+    It is recommended to leave the parameters of this optimizer
+    at their default values
+    (except the learning rate, which can be freely tuned).
+    This optimizer is usually a good choice for recurrent
+    neural networks.
+    # Arguments
+        lr: float >= 0. Learning rate.
+        rho: float >= 0.
+        epsilon: float >= 0. Fuzz factor.
+
+    """
+
+    def __init__(self, learning_rate=0.001, rho=0.9, epsilon=1e-6):
+        super(RMSpropOptimizer, self).__init__()
         self._defaults = {
             "learning_rate": learning_rate,
         }
+        self.rho = rho
+        self.epsilon = epsilon
+
 
 
 
@@ -45,7 +57,7 @@ class SGDOptimizer(Optimizer):
     This method shuld be implemented by the extended classes.
     """
     def _get_placeholders(self):
-        learning_rate = T.scalar(name='learning_rate')
+        learning_rate = T.fscalar(name='learning_rate')
         return [learning_rate]
 
 
@@ -56,6 +68,18 @@ class SGDOptimizer(Optimizer):
     """
 
     def _get_updates(self, params, inputs):
+
         lr = inputs[0]
-        updates = [(p, p - lr * p.grad) for p in params]
+        accumulators = [p.zero_like() for p in params]
+
+        updates = []
+        for p, a in zip(params, accumulators):
+
+            # update accumulator
+            new_a = self.rho * a + (1. - self.rho) * T.square(p.grad)
+            updates.append((a, new_a))
+
+            new_p = p - lr * p.grad / (T.sqrt(new_a) + self.epsilon)
+            updates.append((p, new_p))
+
         return updates

@@ -20,7 +20,7 @@ import numpy as np
 import theano
 import math
 
-from tnet.optimizers import *
+from tnet.optimizers import Optimizer
 from tnet.base import EventArgs, EventHook
 
 T  = theano.tensor
@@ -29,14 +29,31 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
-class SGDOptimizer(Optimizer):
+class AdamOptimizer(Optimizer):
+
+    """ADAM implementation for SGD
+    Adam - A Method for Stochastic Optimization. (http://arxiv.org/abs/1412.6980v8
+
+    # Arguments
+    learning_rate: float >= 0. Learning rate.
+    beta_1: float, 0 < beta < 1. Generally close to 1.
+    beta_2: float, 0 < beta < 1. Generally close to 1.
+    epsilon: float >= 0. Fuzz factor.
 
 
-    def __init__(self, learning_rate=0.01):
-        super(SGDOptimizer, self).__init__()
+    """
+
+    def __init__(self, learning_rate=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-06):
+        super(AdamOptimizer, self).__init__()
         self._defaults = {
             "learning_rate": learning_rate,
+            "iteration": 0
         }
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+        self.iterations = to_shared(0, name='iterations')
+
 
 
 
@@ -45,7 +62,8 @@ class SGDOptimizer(Optimizer):
     This method shuld be implemented by the extended classes.
     """
     def _get_placeholders(self):
-        learning_rate = T.scalar(name='learning_rate')
+        learning_rate = T.fscalar(name='learning_rate')
+
         return [learning_rate]
 
 
@@ -56,6 +74,30 @@ class SGDOptimizer(Optimizer):
     """
 
     def _get_updates(self, params, inputs):
+
         lr = inputs[0]
-        updates = [(p, p - lr * p.grad) for p in params]
+        iterations = self.iterations
+
+        updates = [(self.iterations, self.iterations + 1)]
+
+        t = iterations + 1
+        lr_t = lr * (T.sqrt(1. - T.pow(self.beta_2, t)) /
+                     (1. - T.pow(self.beta_1, t)))
+
+
+        ms = [p.zero_like() for p in params]
+        vs = [p.zero_like() for p in params]
+
+
+        for p, m, v in zip(params, ms, vs):
+            m_t = (self.beta_1 * m) + (1. - self.beta_1) * p.grad
+            v_t = (self.beta_2 * v) + (1. - self.beta_2) * T.square(p.grad)
+            p_t = p - lr_t * m_t / (T.sqrt(v_t) + self.epsilon)
+
+            updates.append((m, m_t))
+            updates.append((v, v_t))
+
+            new_p = p_t
+
+            updates.append((p, new_p))
         return updates

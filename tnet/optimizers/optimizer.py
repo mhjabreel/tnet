@@ -247,6 +247,7 @@ class Optimizer(object):
     def define_updates(self, params):
         place_holders = self._get_placeholders()
         updates = self._get_updates(params, place_holders)
+
         self._update_fn = theano.function(inputs=place_holders, outputs=[], updates=updates)
 
 
@@ -261,5 +262,5 @@ class Optimizer(object):
             else:
                 v = self._get_default(p)
             inputs.append(v)
-        
+
         self._update_fn(*inputs)

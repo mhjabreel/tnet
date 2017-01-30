@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tnet
 import numpy as np
 import theano
 import math
@@ -66,7 +67,7 @@ class SpatialConvolution(Module):
                                               size=self._filter_shape),
                                               theano.config.floatX)
 
-        self._W = theano.shared(self._W_values, borrow=True)
+        self._W = tnet.DifferentiableVariable(self._W_values)
 
         if self._has_bias:
 
@@ -74,7 +75,7 @@ class SpatialConvolution(Module):
             self._b_values = np.array(np.zeros(self._n_output_plane),
                                                       theano.config.floatX)
 
-            self._b = theano.shared(self._b_values, borrow=True)
+            self._b = tnet.DifferentiableVariable(self._b_values)
 
 
     def _update_output(self, inp):
