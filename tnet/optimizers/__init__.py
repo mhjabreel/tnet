@@ -19,4 +19,5 @@ from tnet.optimizers.sgdoptimizer import *
 from tnet.optimizers.adadelta import *
 from tnet.optimizers.adagrad import *
 from tnet.optimizers.adam import *
+from tnet.optimizers.adamx import *
 from tnet.optimizers.rmsprop import *
