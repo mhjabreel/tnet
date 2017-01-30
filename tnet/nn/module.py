@@ -18,6 +18,7 @@ from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod
 
+import tnet
 import numpy as np
 import theano
 import math
@@ -84,12 +85,13 @@ class Module(object):
 
             all_types_are_coorect = all([isinstance(t, np.ndarray) or \
                                          isinstance(t, T.TensorVariable) or \
+                                         isinstance(t, tnet.Variable) or \
                                          isinstance(t, T.TensorConstant) \
                                             for t in type_of_inputs])
             if not all_types_are_coorect:
                 raise  Exception("Wrong types are passed")
 
-            input_or_inputs = [to_tensor(inp) if isinstance(t, np.ndarray) else \
+            input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else \
                                inp for inp in input_or_inputs]
         elif type_of_input == np.ndarray:
             input_or_inputs = to_tensor(input_or_inputs)
@@ -104,7 +106,7 @@ class Module(object):
         input_or_inputs = self._prpare_inputs(input_or_inputs)
 
         self.input = input_or_inputs
-        
+
         return input_or_inputs
 
 

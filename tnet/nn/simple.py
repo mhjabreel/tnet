@@ -22,16 +22,6 @@ import math
 
 from tnet.nn import Module, InputInfo
 
-__all__ = [
-    "Flatten",
-    "Transpose",
-    "View",
-    "Max",
-    "Min",
-    "Mean",
-    "Sum"
-]
-
 T  = theano.tensor
 func = theano.function
 to_tensor = T.as_tensor_variable
@@ -210,3 +200,192 @@ class View(Module):
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
         shape = self._get_shape(inp)
         return T.reshape(inp, shape)
+
+
+class Replicate(Module):
+
+    """
+    This class creates an output where the input is replicated nfeature times along dimension dim (default 0).
+    There is no memory allocation or memory copy in this module. It sets the stride along the dimth dimension to zero.
+    When provided, ndim should specify the number of non-batch dimensions.
+    This allows the module to replicate the same non-batch dimension dim for both batch and non-batch inputs.
+    """
+    def __init__(self, nfeature, dim=0, ndim=None):
+        self._nfeature = nfeature
+        self._dim = dim
+        self._ndim = ndim
+
+        super(Replicate, self).__init__()
+
+
+class Narrow(Module):
+    """
+    Narrow is application of narrow operation in a module.
+    The module further supports negative length, dim and offset to handle inputs of unknown size.
+    """
+
+    pass
+
+
+class Select(Module):
+
+    """
+    Selects a dimension and index of a nxpxqx.. Variable.
+    example:
+
+    >> m = tnet.nn.Sequential()
+    >> m.add(tnet.nn.Select(1, 3))
+
+    >> x = tnet.randn(10, 5)
+    >> print(x)
+    >> print(m.forward(x))
+    gives the output:
+
+     [[0.9720 -0.0836  0.0831 -0.2059 -0.0871],
+      [0.8750 -2.0432 -0.1295 -2.3932  0.8168]
+      ........................................
+     [0.5804 -0.5333  1.1621  1.5683 -0.1978]]
+    tnet.float32_variable of size (10, 5)
+
+     [0.0369
+     1.1633
+     0.6483
+     1.2862
+     0.6596]
+    tnet.float32_variable of size (5,)
+    """
+    pass
+
+class Squeeze(Module):
+    """
+    Applies the Variable squeeze operation.
+    """
+    def __init__(self, dim, numInputDims):
+        super(Squeeze, self).__init__()
+        pass
+
+class Unsqueeze(Module):
+    """
+    Insert singleton dim (i.e., dimension 1) at position pos.
+    For an input with dim = input:dim(), there are dim + 1 possible positions to insert the singleton dimension.
+    For example, if input is 3 dimensional Tensor in size p x q x r,
+    then the singleton dim can be inserted at the following 4 positions
+    pos = 1: 1 x p x q x r
+    pos = 2: p x 1 x q x r
+    pos = 3: p x q x 1 x r
+    pos = 4: p x q x r x 1
+
+    Indicate the expected input feature map dimension by specifying numInputDims.
+    This allows the module to work with mini-batch.
+    """
+    def __init__(self, pos , numInputDims):
+        super(Unsqueeze, self).__init__()
+        self.arg = arg
+
+class Exp(Module):
+    """
+    Applies the exp function element-wise to the input Tensor, thus outputting a Tensor of the same dimension.
+    """
+    def __init__(self, arg):
+        super(Exp, self).__init__()
+        self.arg = arg
+
+class Log(Module):
+    """Applies the log function element-wise to the input Tensor, thus outputting a Tensor of the same dimension."""
+    def __init__(self, arg):
+        super(Log, self).__init__()
+        self.arg = arg
+
+class Square(Module):
+    """Takes the square of each element."""
+    def __init__(self):
+        super(Square, self).__init__()
+
+
+class Sqrt(Module):
+    """Takes the square root of each element."""
+    def __init__(self):
+        super(Sqrt, self).__init__()
+
+
+class Power(Module):
+    """Raises each element to its p-th power."""
+    def __init__(self, p):
+        super(Power, self).__init__()
+        self.arg = arg
+
+class Clamp(Module):
+    """
+    Clamps all elements into the range [min_value, max_value].
+    Output is identical to input in the range,
+    otherwise elements less than min_value (or greater than max_value) are saturated to min_value (or max_value).
+    """
+    def __init__(self, min_value, max_value):
+        super(Clamp, self).__init__()
+        self.arg = arg
+
+class Normalize(Module):
+    """
+    Normalizes the input Tensor to have unit L_p norm.
+    The smoothing parameter eps prevents division by zero when the input contains all zero elements (default = 1e-10).
+
+    Input can be 1D or 2D (in which case it's considered as in batch mode)
+    """
+    def __init__(self, p, eps):
+        super(Normalize, self).__init__()
+        self.arg = arg
+
+class MM(Module):
+    """
+    Performs multiplications on one or more pairs of matrices.
+    If transA is set to true, the first matrix is transposed before multiplication.
+    If transB is set to true, the second matrix is transposed before multiplication.
+    By default, the matrices do not get transposed.
+
+    The module also accepts 3D inputs which are interpreted as batches of matrices.
+    When using batches, the first input matrix should be of size b x m x n
+        and the second input matrix should be of size b x n x p (assuming transA and transB are not set).
+    If transA or transB is set, transpose takes place between the second and
+        the third dimensions for the corresponding matrix.
+    """
+    def __init__(self, transA, transB):
+        super(MM, self).__init__()
+        self.arg = arg
+
+class BatchNormalization(Module):
+    """
+    where N is the dimensionality of input eps is a small value added to the standard-deviation to avoid divide-by-zero.
+    Defaults to 1e-5. affine is a boolean. When set to false, the learnable affine transform is disabled. Defaults to true.
+    During training, this layer keeps a running estimate of its computed mean and std.
+    The running sum is kept with a default momentum of 0.1 (unless over-ridden) During evaluation,
+    this running mean/std is used for normalization.
+
+    Implements Batch Normalization as described in the paper:
+    "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift"
+    by Sergey Ioffe, Christian Szegedy.
+
+    The operation implemented is:
+
+                  x - mean(x)
+    y =  ----------------------------- * gamma + beta
+          standard-deviation(x) + eps
+    where the mean and standard-deviation are calculated per-dimension over the mini-batches and
+    where gamma and beta are learnable parameter vectors of size N (where N is the input size).
+    The learning of gamma and beta is optional. The module only accepts 2D inputs.
+    """
+    def __init__(self, arg):
+        super(BatchNormalization, self).__init__()
+        self.arg = arg
+
+class Padding(Module):
+    """docstring for Padding."""
+    def __init__(self, arg):
+        super(Padding, self).__init__()
+        self.arg = arg
+
+
+class L1Penalty(Module):
+    """docstring for L1Penalty."""
+    def __init__(self, arg):
+        super(L1Penalty, self).__init__()
+        self.arg = arg
