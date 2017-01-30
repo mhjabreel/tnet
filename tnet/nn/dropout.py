@@ -40,6 +40,9 @@ class Dropout(Module):
         super(Dropout, self).__init__()
 
 
+    def _declare(self, **kwargs):
+        pass
+        
     def _update_output(self, inp):
 
         inp = super(Dropout, self)._update_output(inp)

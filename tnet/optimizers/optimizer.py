@@ -16,13 +16,24 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import tnet
+import time
 import numpy as np
 import math
 from tnet.base import *
+import theano
+
+T  = theano.tensor
+func = theano.function
+to_tensor = T.as_tensor_variable
+to_shared = theano.shared
+config = theano.config
 
 __all__ = [
     "Optimizer",
+    "Trainer",
+    "OnlineTrainer",
+    "MinibatchTrainer",
     "TrainingEventArgs",
     "OnStartEpochEventArgs",
     "OnEndEpochEventArgs",
@@ -67,9 +78,13 @@ class OnBackwardEventArgs(TrainingEventArgs):
         self.params_grade = params_grade
         self.target = target
 
-class Optimizer(object):
+class Trainer(object):
 
-    def __init__(self, model, criterion):
+    def __init__(self, network, criterion, optimizer):
+
+        self._network = network
+        self._criterion = criterion
+        self._optimizer = optimizer
 
         self.on_start = EventHook()
         self.on_end = EventHook()
@@ -81,44 +96,73 @@ class Optimizer(object):
         self.on_end_epoch = EventHook()
         self.on_update = EventHook()
 
-        self._model = model
-        self._criterion = criterion
+        self._initialization()
+
+
+    """
+    An abstract methdo to get the input and target place holders.
+    This method shuld be implemented by the extended classes.
+    """
+    def _get_placeholders(self):
+        pass
 
 
     def _initialization(self):
-        if not network.input_info is None:
-            #raise ValueError("The passed network has no specific input")
 
-            inf = network.input_info
-            ndim = len(inf.shape) + 1
+        x_input, y_input = self._get_placeholders()
 
-            broadcast = (False,) * ndim
-            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
-        else:
-            x = T.matrix('x')
+        p_y_given_x = self._network(x_input)
 
-        y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
-                
-        raise NotImplementedError
+        cost = self._criterion(p_y_given_x, y_input)
 
-    def train(self, network, criterion, iterator, config):
-        self._get_train_fn(network, criterion, learning_rate)
+        # get all the trainable variables and compute the gradient of the cost
+        # for each p in params, compute d_cost/d_p
+        params = []
+        g_params = []
+
+        for p in self._network.parameters:
+            if isinstance(p, tnet.DifferentiableVariable):
+                p.grad.zero() # zero grads
+                g = T.grad(cost=cost, wrt=p)
+                params.append(p)
+                g_params.append(g)
+
+
+        gsup =  [(p.grad, g) for p, g in zip(params, g_params)] # this substitution is used to populate the gradient to layers' model
+
+        self._fwd_bwd_step = theano.function(
+            inputs=[x_input, y_input],
+            outputs=[p_y_given_x, cost],
+            updates=gsup
+        )
+
+        self._optimizer.define_updates(params)
+
+    def train(self, dataset_iterator, **training_config):
+
+        max_epoch = 10 # The default value of maximum number of epochs
+        if "max_epoch" in training_config:
+            max_epoch = training_config["max_epoch"]
 
         self.on_start.invoke(EventArgs())
-        epoch = 0
 
-        while epoch < maxepoch:
+        epoch = 0
+        while epoch < max_epoch:
 
             epoch += 1
             start_time = time.time()
             self.on_start_poch.invoke(OnStartEpochEventArgs(epoch, start_time))
 
-            for sample in iterator():
+            for sample in dataset_iterator():
 
-                avg_cost, prob = self._train_fn(sample["input"], sample["target"])
-                self.on_forward.invoke(OnForwardEventArgs(epoch, avg_cost, prob, sample["target"]))
+                prob, v_cost = self._fwd_bwd_step(sample["input"], sample["target"])
+
+                self.on_forward.invoke(OnForwardEventArgs(epoch, v_cost, prob, sample["target"]))
+
                 self.on_backward.invoke(TrainingEventArgs(epoch))
-                self._update_fn(sample["input"], sample["target"])
+
+                self._optimizer.update(**training_config)
+
                 self.on_update.invoke(TrainingEventArgs(epoch))
 
 
@@ -127,5 +171,95 @@ class Optimizer(object):
         self.on_end.invoke(EventArgs())
 
 
-    def test(self, network, criterion, dataset_iterator):
+
+class OnlineTrainer(Trainer):
+    def __init__(self, network, criterion, optimizer):
+        super(OnlineTrainer, self).__init__(network, criterion, optimizer)
+
+    def _get_placeholders(self):
+        if not self._network.input_info is None:
+            #raise ValueError("The passed network has no specific input")
+
+            inf = self._network.input_info
+            ndim = len(inf.shape)
+
+            broadcast = (False,) * ndim
+            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+        else:
+            x = T.matrix('x')
+
+        y = T.iscalar('y')  # labels, presented as 1D vector of [int] labels
+
+        return x, y
+
+class MinibatchTrainer(Trainer):
+    def __init__(self, network, criterion, optimizer):
+        super(MinibatchTrainer, self).__init__(network, criterion, optimizer)
+
+    def _get_placeholders(self):
+        if not self._network.input_info is None:
+            #raise ValueError("The passed network has no specific input")
+
+            inf = self._network.input_info
+            ndim = len(inf.shape) + 1
+
+            broadcast = (False,) * ndim
+            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+        else:
+            x = T.matrix('x')
+
+        y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
+
+        return x, y
+
+class Optimizer(object):
+
+    def __init__(self):
+        self._defaults = {}
+
+
+    """
+    An abstract methdo to get the placeholders of the optimizer's parameters.
+    This method shuld be implemented by the extended classes.
+    """
+    def _get_placeholders(self):
         pass
+
+
+    """
+    A methdo to get the default values of the optimizer's parameters.
+    """
+    def _get_default(self, key):
+
+        if key not in self._defaults:
+            raise ValueError("Unknown parameter % s" % str(key))
+
+        return self._defaults[key]
+
+    """
+    An abstract methdo to get the parameters' update function.
+    This method shuld be implemented by the extended optimizers like SGD, Adadelta, ..etc.
+    """
+
+    def _get_updates(self, params, inputs):
+        pass
+
+    def define_updates(self, params):
+        place_holders = self._get_placeholders()
+        updates = self._get_updates(params, place_holders)
+        self._update_fn = theano.function(inputs=place_holders, outputs=[], updates=updates)
+
+
+    def update(self, **config):
+
+        pnames = [p.name for p in self._get_placeholders()]
+        inputs = []
+
+        for p in pnames:
+            if p in config:
+                v = config[p]
+            else:
+                v = self._get_default(p)
+            inputs.append(v)
+        
+        self._update_fn(*inputs)

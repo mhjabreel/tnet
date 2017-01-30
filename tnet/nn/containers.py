@@ -91,7 +91,7 @@ class Sequential(Container):
     def _update_output(self, inp):
 
         self.input = []
-        last_output = self._prpare_inputs(inp)
+        last_output = self._check_input(inp)
         self.input.append(last_output)
         for m in self._modules:
             last_output = m(last_output)

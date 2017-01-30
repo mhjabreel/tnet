@@ -16,7 +16,6 @@
 from __future__ import absolute_import
 
 import tnet
-import time
 import numpy as np
 import theano
 import math
@@ -32,72 +31,31 @@ config = theano.config
 
 class SGDOptimizer(Optimizer):
 
+
     def __init__(self):
         super(SGDOptimizer, self).__init__()
-
-    def _get_train_fn(self, network, criterion, learning_rate):
-
-        if not network.input_info is None:
-            #raise ValueError("The passed network has no specific input")
-
-            inf = network.input_info
-            ndim = len(inf.shape) + 1
-
-            broadcast = (False,) * ndim
-            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
-        else:
-            x = T.matrix('x')
-
-        y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
-
-
-        self._p_y_given_x = network(x)
-
-        self._cost = criterion(self._p_y_given_x, y)
-        params = []
-        g_params = []
-        for p in network.parameters:
-
-            if isinstance(p, tnet.DifferentiableVariable):
-                g = T.grad(cost=self._cost, wrt=p)
-                params.append(p)
-                g_params.append(g)
-
-
-        updates = [(p, p - learning_rate * g) for p, g in zip(params, g_params)]
-        bw_updates =  [(p.grad, g) for p, g in zip(params, g_params)]
-        self._train_fn = theano.function(
-            inputs=[x, y],
-            outputs=[self._cost, self._p_y_given_x],
-            updates=bw_updates
-        )
-
-        #self._backward_fn = theano.function(inputs=[x, y], outputs=[], updates=bw_updates)
-        self._update_fn = theano.function(inputs=[x, y], outputs=[], updates=updates)
+        self._defaults = {
+            "learning_rate": 0.01,
+        }
 
 
 
-    def train(self, network, criterion, iterator, learning_rate=0.13, maxepoch=2):
-        self._get_train_fn(network, criterion, learning_rate)
-
-        self.on_start.invoke(EventArgs())
-        epoch = 0
-
-        while epoch < maxepoch:
-
-            epoch += 1
-            start_time = time.time()
-            self.on_start_poch.invoke(OnStartEpochEventArgs(epoch, start_time))
-
-            for sample in iterator():
-
-                avg_cost, prob = self._train_fn(sample["input"], sample["target"])
-                self.on_forward.invoke(OnForwardEventArgs(epoch, avg_cost, prob, sample["target"]))
-                self.on_backward.invoke(TrainingEventArgs(epoch))
-                self._update_fn(sample["input"], sample["target"])
-                self.on_update.invoke(TrainingEventArgs(epoch))
+    """
+    An abstract methdo to get the placeholders of the optimizer's parameters.
+    This method shuld be implemented by the extended classes.
+    """
+    def _get_placeholders(self):
+        learning_rate = T.fscalar(name='learning_rate')
+        return [learning_rate]
 
 
-            self.on_end_epoch.invoke(OnEndEpochEventArgs(epoch, start_time, time.time()))
 
-        self.on_end.invoke(EventArgs())
+    """
+    An abstract methdo to get the parameters' update function.
+    This method shuld be implemented by the extended optimizers like SGD, Adadelta, ..etc.
+    """
+
+    def _get_updates(self, params, inputs):
+        lr = inputs[0]
+        updates = [(p, p - lr * p.grad) for p in params]
+        return updates

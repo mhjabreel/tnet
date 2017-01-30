@@ -176,7 +176,7 @@ def on_sample_handler(args):
 """
 
 def on_start_poch_handler(args):
-    model.running_mode = 'train'
+    model.training()
     loss_meter.reset()
     acc_meter.reset()
 
@@ -192,7 +192,7 @@ def on_forward_handler(args):
 def on_end_epoch_handler(args):
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     print("elapsed time: %2.2f seconds" % (args.end_time - args.start_time))
-    model.running_mode = 'eval'
+    model.evaluate()
     print("Testing")
     acc_meter.reset()
     loss_meter.reset()
@@ -228,19 +228,21 @@ model = nn.Sequential() \
     .add(nn.Linear(512, nb_classes)) \
     .add(nn.SoftMax())
 
-model.running_mode = 'train'
+
 
 criterion = nn.ClassNLLCriterion()
 
 optimizer = SGDOptimizer()
-optimizer.on_forward += on_forward_handler
-optimizer.on_start_poch += on_start_poch_handler
-optimizer.on_end_epoch += on_end_epoch_handler
 
+trainer = MinibatchTrainer(model, criterion, optimizer)
+trainer.on_forward += on_forward_handler
+trainer.on_start_poch += on_start_poch_handler
+trainer.on_end_epoch += on_end_epoch_handler
 
-optimizer.train(model, criterion, iterator, learning_rate=0.01,  maxepoch=20)
+model.training()
+trainer.train(iterator, learning_rate=0.1,  max_epoch=20)
 
-model.running_mode = 'eval'
+model.evaluate()
 
 print("Testing")
 

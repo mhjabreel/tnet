@@ -85,7 +85,7 @@ def on_sample_handler(args):
 
 
 def on_start_poch_handler(args):
-    model.running_mode = 'train'
+    model.training()
     loss_meter.reset()
     acc_meter.reset()
 
@@ -126,19 +126,25 @@ model = nn.Sequential() \
     .add(nn.Linear(128, nb_classes)) \
     .add(nn.SoftMax())
 
-model.running_mode = 'train'
+
+
+criterion = nn.ClassNLLCriterion()
+
+model.training()
 
 criterion = nn.ClassNLLCriterion()
 
 optimizer = SGDOptimizer()
-optimizer.on_forward += on_forward_handler
-optimizer.on_start_poch += on_start_poch_handler
-optimizer.on_end_epoch += on_end_epoch_handler
 
+trainer = MinibatchTrainer(model, criterion, optimizer)
+trainer.on_forward += on_forward_handler
+trainer.on_start_poch += on_start_poch_handler
+trainer.on_end_epoch += on_end_epoch_handler
 
-optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=12)
+model.training()
+trainer.train(iterator, learning_rate=0.1,  max_epoch=12)
 
-model.running_mode = 'eval'
+model.evaluate()
 
 print("Testing")
 

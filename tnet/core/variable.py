@@ -62,7 +62,7 @@ class Variable(_tensor_py_operators, SharedVariable):
 
 
 
-    def zero(self):
+    def zero_like(self):
         super(Variable, self).zero()
         return self
 
@@ -83,4 +83,4 @@ class DifferentiableVariable(Variable):
     """docstring for DifferentiableVariable."""
     def __init__(self, value):
         super(DifferentiableVariable, self).__init__(value)
-        self.grad = Variable(value).zero()
+        self.grad = Variable(value).zero_like()

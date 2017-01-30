@@ -7,6 +7,7 @@ Gets to 0.89 test accuracy after 2 epochs.
 '''
 
 from __future__ import print_function
+
 import numpy as np
 np.random.seed(1337)  # for reproducibility
 
@@ -143,16 +144,15 @@ iterator = get_iterator(IMDBTDataset([X_train, y_train]))
 #iterator.on_sample += on_sample_handler
 
 
-
 criterion = nn.BCECriterion()
-
 optimizer = SGDOptimizer()
-optimizer.on_forward += on_forward_handler
-optimizer.on_start_poch += on_start_poch_handler
-optimizer.on_end_epoch += on_end_epoch_handler
+trainer = MinibatchTrainer(model, criterion, optimizer)
+trainer.on_forward += on_forward_handler
+trainer.on_start_poch += on_start_poch_handler
+trainer.on_end_epoch += on_end_epoch_handler
 
 
-optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=nb_epoch)
+trainer.train(iterator, learning_rate=0.1,  max_epoch=nb_epoch)
 
 model.evaluate()
 
