@@ -79,6 +79,7 @@ class Module(object):
     def _check_input(self, input_or_inputs):
 
         type_of_input = type(input_or_inputs)
+        print(type_of_input)
         if type_of_input == list or type_of_input == tuple:
 
             type_of_inputs = [type(inp) for inp in input_or_inputs]
@@ -122,8 +123,11 @@ class Module(object):
 
     def forward(self, input_or_inputs):
         out = self._update_output(input_or_inputs)
-
-        self._output = out.eval()
+        if type(out) == list:
+            print(out)
+            self._output = [s.eval() for s in out]
+        else:
+            self._output = out.eval()
 
         return self._output
 

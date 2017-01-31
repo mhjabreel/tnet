@@ -21,5 +21,6 @@ from tnet.nn.activations import *
 from tnet.nn.convolutional import *
 from tnet.nn.pooling import *
 from tnet.nn.lookuptable import *
+from tnet.nn.list import *
 from tnet.nn.containers import *
 from tnet.nn.criteria import *
