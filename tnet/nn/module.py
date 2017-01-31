@@ -96,7 +96,7 @@ class Module(object):
         elif type_of_input == np.ndarray:
             input_or_inputs = to_tensor(input_or_inputs)
         else:
-            if not (type_of_input == T.TensorVariable or type_of_input == T.TensorConstant):
+            if not (type_of_input == T.TensorVariable or type_of_input == T.TensorConstant or type_of_input == tnet.Variable):
                 raise  ValueError("Wrong types are passed")
 
         return input_or_inputs

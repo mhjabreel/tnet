@@ -213,14 +213,51 @@ class Replicate(Module):
 
         super(Replicate, self).__init__()
 
+    def _compile(self):
+        shp = [1] * (self._dim + 1)
+        if self._ndim is not None:
+            shp.append(1)
+        x = np.random.random(shp).astype(config.floatX)
+
+        self.forward(x)
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        shape = list(inp.shape)
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        shape.insert(dim + 1, self._nfeature)
+        return T.repeat(inp, self._nfeature, axis=dim).reshape(shape)
+
 
 class Narrow(Module):
     """
     Narrow is application of narrow operation in a module.
     The module further supports negative length, dim and offset to handle inputs of unknown size.
     """
+    def __init__(self, dimension, offset, length):
+        self._dimension = dimension
+        self._offset = offset
+        self._length = length
 
-    pass
+        self._indices = range(offset, offset + length)
+
+        super(Narrow, self).__init__()
+
+    def _compile(self):
+        shp = [1] * (self._dimension + 1)
+        shp[self._dimension] = self._offset + self._length
+        x = np.random.random(shp).astype(config.floatX)
+        self.forward(x)
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        return T.take(inp, self._indices, axis=self._dimension)
 
 
 class Select(Module):
@@ -250,15 +287,51 @@ class Select(Module):
      0.6596]
     tnet.float32_variable of size (5,)
     """
-    pass
+    def __init__(self, dimension, index):
+        self._dimension = dimension
+        self._index = index
+        super(Select, self).__init__()
+
+    def _compile(self):
+        shp = [1] * (self._dimension + 1)
+        shp[self._dimension] = self._index + 1
+        x = np.random.random(shp).astype(config.floatX)
+        self.forward(x)
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        return T.take(inp, self._index, axis=self._dimension)
 
 class Squeeze(Module):
     """
     Applies the Variable squeeze operation.
     """
-    def __init__(self, dim, numInputDims):
+    def __init__(self, dim=0, ndim=None):
+        self._dim = dim
+        self._ndim = ndim
         super(Squeeze, self).__init__()
+
+
+    def _compile(self):
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        shp = [2] * (dim + 2)
+        shp[dim] = 1
+
+        x = np.random.random(shp).astype(config.floatX)
+        self.forward(x)
+
+    def _declare(self):
         pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        shape = list(inp.shape)
+        shape.pop(dim)
+        return T.reshape(inp, tuple(shape))
 
 class Unsqueeze(Module):
     """
@@ -274,52 +347,97 @@ class Unsqueeze(Module):
     Indicate the expected input feature map dimension by specifying numInputDims.
     This allows the module to work with mini-batch.
     """
-    def __init__(self, pos , numInputDims):
+    def __init__(self, dim , ndim=None):
+        self._dim = dim
+        self._ndim = ndim
         super(Unsqueeze, self).__init__()
-        self.arg = arg
 
-class Exp(Module):
+    def _compile(self):
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        shp = [2] * (dim + 2)
+        shp[dim] = 1
+
+        x = np.random.random(shp).astype(config.floatX)
+        self.forward(x)
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        dims = [i for i in range(inp.ndim)]
+        """[TODO]: enable negative dim"""
+        dims.insert(dim, 'x')
+        return inp.dimshuffle(dims)
+
+class _Func(Module):
+    def __init__(self, func):
+        self._func = func
+        super(_Func, self).__init__()
+
+    def _compile(self):
+        pass
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        return self._func(inp)
+
+class Exp(_Func):
     """
     Applies the exp function element-wise to the input Tensor, thus outputting a Tensor of the same dimension.
     """
-    def __init__(self, arg):
-        super(Exp, self).__init__()
-        self.arg = arg
+    def __init__(self):
+        super(Exp, self).__init__(T.exp)
 
-class Log(Module):
+
+class Log(_Func):
     """Applies the log function element-wise to the input Tensor, thus outputting a Tensor of the same dimension."""
-    def __init__(self, arg):
-        super(Log, self).__init__()
-        self.arg = arg
+    def __init__(self):
+        super(Log, self).__init__(T.log)
 
-class Square(Module):
+class Square(_Func):
     """Takes the square of each element."""
     def __init__(self):
-        super(Square, self).__init__()
+        super(Square, self).__init__(T.sqr)
 
 
-class Sqrt(Module):
+class Sqrt(_Func):
     """Takes the square root of each element."""
     def __init__(self):
-        super(Sqrt, self).__init__()
+        super(Sqrt, self).__init__(T.sqrt)
 
 
-class Power(Module):
+class Power(_Func):
     """Raises each element to its p-th power."""
     def __init__(self, p):
-        super(Power, self).__init__()
-        self.arg = arg
+        self._p = p
+        super(Power, self).__init__(None)
 
-class Clamp(Module):
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        return T.pow(inp, self._p)
+
+
+class Clamp(_Func):
     """
     Clamps all elements into the range [min_value, max_value].
     Output is identical to input in the range,
     otherwise elements less than min_value (or greater than max_value) are saturated to min_value (or max_value).
     """
     def __init__(self, min_value, max_value):
-        super(Clamp, self).__init__()
-        self.arg = arg
+        self._min_value = min_value
+        self._max_value = max_value
+        super(Clamp, self).__init__(None)
 
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        return T.clip(inp, self._min_value, self._max_value)
 class Normalize(Module):
     """
     Normalizes the input Tensor to have unit L_p norm.

@@ -20,3 +20,25 @@ from tnet import nn
 from tnet import dataset
 from tnet import meter
 from tnet import optimizers
+
+import numpy as np
+import theano
+import tnet
+
+def rand(*shape):
+    x = np.random.random(shape).astype(theano.config.floatX)
+    return tnet.Variable(x)
+
+
+def randn(*shape):
+    x = np.random.randn(*shape).astype(theano.config.floatX)
+    return tnet.Variable(x)
+    
+def zero(*shape):
+    x = np.zero(shape).astype(theano.config.floatX)
+    return tnet.Variable(x)
+
+
+def one(*shape):
+    x = np.one(shape).astype(theano.config.floatX)
+    return tnet.Variable(x)
