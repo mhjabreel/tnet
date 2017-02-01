@@ -14,6 +14,7 @@
 # =============================================================================
 from __future__ import absolute_import
 from tnet.nn.module import *
+from tnet.nn.containers import *
 from tnet.nn.simple import *
 from tnet.nn.linear import *
 from tnet.nn.dropout import *
@@ -22,5 +23,5 @@ from tnet.nn.convolutional import *
 from tnet.nn.pooling import *
 from tnet.nn.lookuptable import *
 from tnet.nn.list import *
-from tnet.nn.containers import *
+
 from tnet.nn.criteria import *

@@ -165,7 +165,7 @@ class BatchDataset(Dataset):
 
         assert idx >= 0 and idx < self._size
 
-        samples = dict([(a, []) for a in self._dataset.attributes])
+        samples = dict([(a.name, []) for a in self._dataset.attributes])
 
         maxidx = self._dataset.size
 
@@ -179,10 +179,11 @@ class BatchDataset(Dataset):
             s = self._dataset[idx_]
 
             for j, a in enumerate(self._dataset.attributes):
-                samples[a].append(s[j])
+                samples[a.name].append(s[j])
 
 
-        samples = dict([(a.name, np.array(samples[a])) for a in self._dataset.attributes])
+        for a in  self._dataset.attributes:
+            samples[a.name] = np.array(samples[a.name])
 
         return samples
 

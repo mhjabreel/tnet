@@ -44,7 +44,8 @@ numpy.random.seed(1337)  # for reproducibility
 
 import theano
 
-
+theano.config.floatX = 'float32'
+theano.config.mode = 'FAST_RUN'
 
 
 def get_iterator(data):
@@ -64,8 +65,20 @@ acc_meter  = meter.AccuracyMeter()
 
 #get_grad_prams_values
 model = nn.Sequential() \
-    .add(nn.Linear(28 * 28, 10))
+    .add(nn.Linear(28 * 28, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 10)) #\
     #.add(nn.SoftMax())
+
+def on_sample_handler(args):
+
+    print(args.sample["target"][0])
+    args.sample["target"][0] = 0
+    print(args.sample["target"][0])
 
 
 def on_start_poch_handler(args):
