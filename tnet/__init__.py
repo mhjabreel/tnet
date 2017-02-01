@@ -33,12 +33,12 @@ def rand(*shape):
 def randn(*shape):
     x = np.random.randn(*shape).astype(theano.config.floatX)
     return tnet.Variable(x)
-    
-def zero(*shape):
+
+def zeros(*shape):
     x = np.zero(shape).astype(theano.config.floatX)
     return tnet.Variable(x)
 
 
-def one(*shape):
-    x = np.one(shape).astype(theano.config.floatX)
+def ones(*shape):
+    x = np.ones(shape).astype(theano.config.floatX)
     return tnet.Variable(x)

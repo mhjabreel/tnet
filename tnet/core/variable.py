@@ -87,3 +87,4 @@ class DifferentiableVariable(Variable):
         super(DifferentiableVariable, self).__init__(value, name)
         gname = name + "_grad" if not name is None else None
         self.grad = self.zero_like(gname)
+        self.g = None

@@ -50,29 +50,29 @@ theano.config.mode = 'FAST_RUN'
 
 def get_iterator(data):
     data = BatchDataset(
-        dataset=ShuffleDataset(
-            dataset=data
-        ),
+        dataset=data,
         batch_size=128
     )
     return DatasetIterator(data)
 
-
+train_dataset, [X_test, y_test] = mnist.get_data()
+train_dataset = ShuffleDataset(dataset=train_dataset)
+iterator = get_iterator(train_dataset)
 
 loss_meter  = meter.AverageValueMeter()
 acc_meter  = meter.AccuracyMeter()
 
-m1 = nn.Linear(28 * 28, 512)
+
 #get_grad_prams_values
 model = nn.Sequential() \
-    .add(m1) \
+    .add(nn.Linear(28 * 28, 512)) \
     .add(nn.ReLU()) \
     .add(nn.Dropout(0.2)) \
     .add(nn.Linear(512, 512)) \
     .add(nn.ReLU()) \
     .add(nn.Dropout(0.2)) \
-    .add(nn.Linear(512, 10)) \
-    .add(nn.SoftMax())
+    .add(nn.Linear(512, 10)) #\
+    #.add(nn.SoftMax())
 
 def on_sample_handler(args):
 
@@ -82,6 +82,7 @@ def on_sample_handler(args):
 
 
 def on_start_poch_handler(args):
+    train_dataset.resample()
     model.training()
     loss_meter.reset()
     acc_meter.reset()
@@ -98,13 +99,11 @@ def on_forward_handler(args):
 def on_end_epoch_handler(args):
 
     print('epoch: {}; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("elapsed time: %2.2f seconds" % (args.end_time - args.start_time))
+    print("elapsed time: %d s" % (args.end_time - args.start_time))
 
 
 
-train_dataset, [X_test, y_test] = mnist.get_data()
 
-iterator = get_iterator(train_dataset)
 
 #iterator.on_sample += on_sample_handler
 
@@ -112,9 +111,9 @@ iterator = get_iterator(train_dataset)
 
 model.training()
 
-criterion = nn.ClassNLLCriterion()
+criterion = nn.CrossEntropyCriterion()
 
-optimizer = AdamOptimizer()
+optimizer = SGDOptimizer()
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler
@@ -122,7 +121,7 @@ trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 
-trainer.train(iterator, learning_rate=0.1,  max_epoch=20)
+trainer.train(iterator, learning_rate=0.1,  max_epoch=5)
 
 
 

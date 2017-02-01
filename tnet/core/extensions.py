@@ -72,11 +72,17 @@ class SplitList(Op):
 
         broadcastable = list(x.broadcastable)
         broadcastable.pop(self.dim)
+        n = x.shape[self.dim]
 
 
         inputs = [x]
         out_type = theano.tensor.TensorType(x.dtype, broadcastable)
-        outputs = [out_type()]
+        #outputs = [out_type()]
+        out_types, _ = theano.scan(lambda _ : out_type(),sequences=[T.arange(n)])
+
+        get_out_types = theano.function([], outputs=out_types)
+        outputs = get_out_types()
+        print(outputs)
 
 
 

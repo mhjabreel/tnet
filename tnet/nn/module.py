@@ -126,10 +126,9 @@ class Module(object):
     def forward(self, input_or_inputs):
         out = self._update_output(input_or_inputs)
         if type(out) == list:
-            print(out)
-            self._output = [s.eval() for s in out]
+            self._output = [tnet.Variable(s.eval()) for s in out]
         else:
-            self._output = out.eval()
+            self._output = tnet.Variable(out.eval())
 
         return self._output
 

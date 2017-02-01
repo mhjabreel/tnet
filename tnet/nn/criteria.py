@@ -22,12 +22,12 @@ import theano.tensor as T
 import numpy as np
 import math
 
-from tnet.nn import Module
+from tnet.nn import Module, LogSoftMax
 
 __all__ = [
     "Criterion",
     "ClassNLLCriterion",
-    #"CrossEntropyCriterion",
+    "CrossEntropyCriterion",
     "BCECriterion"
 ]
 
@@ -56,6 +56,16 @@ class ClassNLLCriterion(Criterion):
     def _update_output(self, input, target):
         return -T.mean(T.log(input)[T.arange(target.shape[0]), target])
 
+
+class CrossEntropyCriterion(Criterion):
+
+    def __init__(self, **kwargs):
+        self.ls = LogSoftMax()
+
+
+    def _update_output(self, input, target):
+        out = self.ls(input)
+        return -T.mean(out[T.arange(target.shape[0]), target])
 
 
 class BCECriterion(Criterion):
