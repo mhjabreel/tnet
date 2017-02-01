@@ -59,14 +59,9 @@ class SplitList(Module):
 
     def _update_output(self, inp):
         inp = self._check_input(inp)
-        splits = []
-        dim = self._dim + 1 if not self._ndim is None else self._dim
-        N = inp.shape[dim]
-        def get_split(i):
-            splits.append(T.take(inp, i, dim))
-            return splits
 
-        _, _ = theano.scan(get_split, sequences=[T.arange(N)])
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+        splits = tnet.split(inp, dim)
         return splits
 
     def forward(self, input_or_inputs):
@@ -89,10 +84,7 @@ class JoinList(Module):
         pass
 
     def _update_output(self, inp):
+        dim = self._dim + 1 if not self._ndim is None else self._dim
         inp = self._check_input(inp)
-        try:
-            _ = len(inp) # just to insure that the input is list of variables
-            dim = self._dim + 1 if not self._ndim is None else self._dim
-            return T.stack(inp, dim)
-        except:
-            raise ValueError("This module receive list of inputs get %s" % str(inp))
+        print(type(inp))
+        return T.concatenate([inp], dim)

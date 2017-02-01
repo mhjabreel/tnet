@@ -79,16 +79,18 @@ class Module(object):
     def _check_input(self, input_or_inputs):
 
         type_of_input = type(input_or_inputs)
-        print(type_of_input)
+
         if type_of_input == list or type_of_input == tuple:
 
             type_of_inputs = [type(inp) for inp in input_or_inputs]
 
-            all_types_are_coorect = all([isinstance(t, np.ndarray) or \
-                                         isinstance(t, T.TensorVariable) or \
-                                         isinstance(t, tnet.Variable) or \
-                                         isinstance(t, T.TensorConstant) \
+
+            all_types_are_coorect = all([ t == np.ndarray or \
+                                         t == T.TensorVariable or \
+                                         t == tnet.Variable or \
+                                         t == T.TensorConstant \
                                             for t in type_of_inputs])
+
             if not all_types_are_coorect:
                 raise  ValueError("Wrong types are passed")
 

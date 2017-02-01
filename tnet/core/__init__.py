@@ -16,3 +16,4 @@
 from __future__ import absolute_import
 
 from tnet.core.variable import *
+from tnet.core.extensions import *
