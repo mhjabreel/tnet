@@ -105,3 +105,20 @@ class Sequential(Container):
         if len(self._modules) > 0:
             m = self._modules[0]
             return m.input_info
+
+    def __rep__(self):
+
+        tab = "  "
+        next = " -> "
+        line = '\n'
+        s = "Sequential {\n" + tab + "[input"
+
+        s1 = ""
+        s2 = ""
+        for i, m in enumerate(self._modules):
+            s1 = s1 + next + "({})".format(i + 1)
+            s2 = s2 + line + tab + "({}): {}".format(i + 1, m).replace(line, line + tab)
+
+        s += s1 + next + "output]" +  s2 + line + "}"
+
+        return s

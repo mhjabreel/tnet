@@ -25,6 +25,8 @@ import numpy as np
 import theano
 import tnet
 
+
+
 def rand(*shape):
     x = np.random.random(shape).astype(theano.config.floatX)
     return tnet.Variable(x)

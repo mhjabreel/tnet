@@ -125,10 +125,11 @@ class Module(object):
 
     def forward(self, input_or_inputs):
         out = self._update_output(input_or_inputs)
+
         if type(out) == list:
-            self._output = [tnet.Variable(s.eval()) for s in out]
+            self._output = [s.eval() for s in out]
         else:
-            self._output = tnet.Variable(out.eval())
+            self._output = out.eval()
 
         return self._output
 
@@ -175,3 +176,10 @@ class Module(object):
     def input_info(self):
         if hasattr(self, '_input_info'):
             return self._input_info
+
+    def __rep__(self):
+
+        return self.__class__.__name__
+
+    def __str__(self):
+        return str(self.__rep__())

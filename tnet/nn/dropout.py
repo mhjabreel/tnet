@@ -42,7 +42,7 @@ class Dropout(Module):
 
     def _declare(self, **kwargs):
         pass
-        
+
     def _update_output(self, inp):
 
         inp = super(Dropout, self)._update_output(inp)
@@ -58,3 +58,7 @@ class Dropout(Module):
         y = inp * T.cast(mask, config.floatX)
 
         return y
+
+    def __rep__(self):
+
+        return "{}({})".format(self.__class__.__name__, self._p)        

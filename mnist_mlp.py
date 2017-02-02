@@ -44,13 +44,13 @@ numpy.random.seed(1337)  # for reproducibility
 
 import theano
 
-
+print("Running on: " + theano.config.device)
 
 
 def get_iterator(data):
     data = BatchDataset(
         dataset=data,
-        batch_size=128
+        batch_size=64
     )
     return DatasetIterator(data)
 
@@ -64,8 +64,22 @@ acc_meter  = meter.AccuracyMeter()
 
 #get_grad_prams_values
 model = nn.Sequential() \
-    .add(nn.Linear(28 * 28, 10))
+    .add(nn.Linear(28 * 28, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 10)) #\
     #.add(nn.SoftMax())
+
+model = nn.Sequential().add(model)
+print(model)
+def on_sample_handler(args):
+
+    print(args.sample["target"][0])
+    args.sample["target"][0] = 0
+    print(args.sample["target"][0])
 
 
 def on_start_poch_handler(args):
@@ -83,10 +97,6 @@ def on_forward_handler(args):
     sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     sys.stderr.flush()
 
-def on_end_epoch_handler(args):
-
-    print('epoch: {}; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("elapsed time: %d s" % (args.end_time - args.start_time))
 
 
 
@@ -95,6 +105,27 @@ def on_end_epoch_handler(args):
 #iterator.on_sample += on_sample_handler
 
 
+def eval():
+    model.evaluate()
+
+
+    acc_meter.reset()
+    loss_meter.reset()
+
+    p_y_given_x = model.forward(X_test)
+    loss = criterion.forward(p_y_given_x, y_test)
+    loss_meter.add(loss)
+    acc_meter.add(p_y_given_x, y_test)
+
+
+
+    print('Test set: Average loss: {:.4f}, Accuracy:{:.0f} % '.format(loss_meter.value[0], acc_meter.value))
+
+def on_end_epoch_handler(args):
+
+    print('epoch: {}; avg. loss: {:2.4f}; A. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+    print("elapsed time: %d s" % (args.end_time - args.start_time))
+    eval()
 
 model.training()
 
@@ -102,28 +133,12 @@ criterion = nn.CrossEntropyCriterion()
 
 optimizer = SGDOptimizer()
 
+print(optimizer)
+
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler
 trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 
-trainer.train(iterator, learning_rate=0.1,  max_epoch=5)
-
-
-
-model.evaluate()
-
-print("Testing")
-
-acc_meter.reset()
-loss_meter.reset()
-
-p_y_given_x = model.forward(X_test)
-loss = criterion.forward(p_y_given_x, y_test)
-loss_meter.add(loss)
-acc_meter.add(p_y_given_x, y_test)
-
-
-
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
+trainer.train(iterator, learning_rate=0.1, max_epoch=5)

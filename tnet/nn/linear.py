@@ -61,7 +61,7 @@ class Linear(Module):
         nin = self._input_size
         nout = self._output_size
 
-        stdv = np.sqrt(6. / (nin + nout))#1. / np.sqrt(nout) #
+        stdv = 1. / np.sqrt(nout) #np.sqrt(6. / (nin + nout))#
 
         self._W_values = np.array(np.random.uniform(low=-stdv,
                                               high=stdv,
@@ -86,9 +86,9 @@ class Linear(Module):
         inp = super(Linear, self)._update_output(inp)
 
         if inp.ndim == 1 or inp.ndim == 2:
-            y = T.dot(inp, self._W.data)
+            y = T.dot(inp, self._W)
             if self._has_bias:
-                y += self._b.data
+                y += self._b
             return y
         else:
             raise Exception("input must be vector or matrix")
@@ -113,3 +113,8 @@ class Linear(Module):
 
     def get_grad_prams_values(self):
         return self._W.grad
+
+
+    def __rep__(self):
+
+        return "{}({} -> {})".format(self.__class__.__name__, self._input_size, self._output_size)

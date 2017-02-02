@@ -122,10 +122,11 @@ class Trainer(object):
 
         for p in self._network.parameters:
             if isinstance(p, tnet.DifferentiableVariable):
-                #p.grad.zero() # zero grads
-                g = T.grad(cost=cost, wrt=p())
+                
+                g = T.grad(cost=cost, wrt=p)
                 params.append(p)
                 g_params.append(g)
+
 
 
         gsup =  [(p.grad, g) for p, g in zip(params, g_params)] # this substitution is used to populate the gradient to layers' model
@@ -178,15 +179,25 @@ class OnlineTrainer(Trainer):
 
     def _get_placeholders(self):
         if not self._network.input_info is None:
-            #raise ValueError("The passed network has no specific input")
-
             inf = self._network.input_info
-            ndim = len(inf.shape)
-
-            broadcast = (False,) * ndim
-            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+            try:
+                _ = len(inf) # model has multiple inputs ?
+                x = []
+                k = 0
+                for i in inf:
+                    ndim = len(i.shape)
+                    broadcast = (False,) * ndim
+                    x.append(T.TensorType(i.dtype, broadcast)('x_%d' % k))  # data, presented as rasterized images
+                    k += 1
+            except:
+                try:
+                    ndim = len(inf.shape)
+                    broadcast = (False,) * ndim
+                    x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+                except:
+                    raise ValueError("Unsupported input info %s" % (inf))
         else:
-            x = T.matrix('x')
+            x = T.vector('x')
 
         y = T.iscalar('y')  # labels, presented as 1D vector of [int] labels
 
@@ -198,14 +209,27 @@ class MinibatchTrainer(Trainer):
 
     def _get_placeholders(self):
         if not self._network.input_info is None:
-            #raise ValueError("The passed network has no specific input")
+
 
             inf = self._network.input_info
-            ndim = len(inf.shape) + 1
-
-            broadcast = (False,) * ndim
-            x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+            try:
+                _ = len(inf) # model has multiple inputs ?
+                x = []
+                k = 0
+                for i in inf:
+                    ndim = len(i.shape) + 1
+                    broadcast = (False,) * ndim
+                    x.append(T.TensorType(i.dtype, broadcast)('x_%d' % k))  # data, presented as rasterized images
+                    k += 1
+            except:
+                try:
+                    ndim = len(inf.shape) + 1
+                    broadcast = (False,) * ndim
+                    x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+                except:
+                    raise ValueError("Unsupported input info %s" % (inf))
         else:
+
             x = T.matrix('x')
 
         y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
@@ -264,3 +288,6 @@ class Optimizer(object):
             inputs.append(v)
 
         self._update_fn(*inputs)
+
+    def __repr__(self):
+        return self.__class__.__name__

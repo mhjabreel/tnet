@@ -62,7 +62,7 @@ class SGDOptimizer(Optimizer):
         updates = OrderedDict()
 
         for p in params:
-            updates[p()] = p - lr * p.grad
-        updates[step()] = step + 1
+            updates[p] = p - lr * p.grad
+        updates[step] = step + 1
 
         return updates

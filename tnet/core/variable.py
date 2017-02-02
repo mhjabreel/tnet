@@ -26,15 +26,15 @@ from theano.compile import shared_constructor, SharedVariable
 T  = theano.tensor
 func = theano.function
 to_tensor = T.as_tensor_variable
-shared = theano.shared
+to_shared = theano.shared
 config = theano.config
 
 __all__ = ["Variable", "DifferentiableVariable"]
 
-class Variable(object):
+class Variable(theano.tensor.sharedvar.TensorSharedVariable):
     """docstring for Variable."""
     def __init__(self, value, name=None):
-        """
+
         if isinstance(value, list):
             pass
         elif isinstance(value, np.ndarray):
@@ -46,16 +46,19 @@ class Variable(object):
                                 name=name,
                                 strict=True,
                                 allow_downcast=True)
-        """
 
-        self.data = shared(value, name = name)
-        self._value = value
+
+        #self.transfer(config.device)
+
+
+
+
 
     def __str__(self):
 
-        value = self._value
-        t = self._value .dtype
-        size = self._value .shape
+        value = self.get_value()
+        t = value.dtype
+        size = value.shape
 
         value = str(value)
 
@@ -67,37 +70,18 @@ class Variable(object):
 
     def zero_like(self, name=None):
 
-        return self.data.zero_like(name)
 
+        return theano.shared(self.value * 0., name)
 
+    def clone(self):
+        cp = self.__class__(self.get_value())
+        cp.tag = copy.copy(self.tag)
+        return cp
 
-    def __call__(self):
-        return self.data
-        
     @property
     def value(self):
-        return self._value
+        return self.get_value()
 
-    @property
-    def dtype(self):
-        return self._value.dtype
-
-    def __getattr__(self, name):
-        #if name in self._fallthrough_methods:
-        return getattr(self.data, name)
-        #raise AttributeError(name)
-
-    def __add__(self, other):
-        if isinstance(other, Variable):
-            return self.data + other.data
-        else:
-            return self.data + other
-
-    def __sub__(self, other):
-        if isinstance(other, Variable):
-            return self.data - other.data
-        else:
-            return self.data - other
 
 
 
@@ -107,5 +91,4 @@ class DifferentiableVariable(Variable):
     def __init__(self, value, name=None):
         super(DifferentiableVariable, self).__init__(value, name)
         gname = name + "_grad" if not name is None else None
-
-        self.grad = shared(np.zeros_like(self.value).astype(self.dtype)) #self.zero_like(gname)
+        self.grad = self.zero_like(gname)#theano.shared(value * 0., gname)
