@@ -59,6 +59,6 @@ class Dropout(Module):
 
         return y
 
-    def __rep__(self):
+    def __repr__(self):
 
-        return "{}({})".format(self.__class__.__name__, self._p)        
+        return "{}({})".format(self.__class__.__name__, self._p)

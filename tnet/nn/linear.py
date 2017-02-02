@@ -115,6 +115,6 @@ class Linear(Module):
         return self._W.grad
 
 
-    def __rep__(self):
+    def __repr__(self):
 
         return "{}({} -> {})".format(self.__class__.__name__, self._input_size, self._output_size)

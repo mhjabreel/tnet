@@ -95,31 +95,33 @@ print(x)
 print(o)
 print(o.shape)
 
-print("SplitList example")
-m = nn.Sequential()
-m.add(nn.SplitList(0))
-x = tnet.randn(5, 5)
-o = m.forward(x)
-print(x)
-print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-print(len(o))
-print(o)
-print(type(o))
-print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-#o = [tnet.randn(2, 5), tnet.randn(2, 5)]
-m = nn.JoinList(0)
-o = m.forward(o)
-print(o)
-print(o.shape)
 
-print("dddddddddddddddddddddddddddddddddddd")
-print("Split and join example")
-m = nn.Sequential()
-m.add(nn.SplitList(0))
-m.add(nn.JoinList(0))
-x = tnet.randn(5, 5)
-o = m.forward(x)
-print(x)
-print(o)
+print("Parallel example")
+m = nn.Parallel(1,0);   # Parallel container will associate a module to each slice of dimension 2
+                                # (column space), and concatenate the outputs over the 1st dimension.
 
-print(type(o))
+m.add(nn.Linear(10,3))  # Linear module (input 10, output 3), applied on 1st slice of dimension 2
+m.add(nn.Linear(10,2))    # Linear module (input 10, output 2), applied on 2nd slice of dimension 2
+
+print(str(m))
+out = m.forward(tnet.randn(10, 2))
+print(out)
+
+print("Concat example")
+m = nn.Concat(0);   # Parallel container will associate a module to each slice of dimension 2
+                                # (column space), and concatenate the outputs over the 1st dimension.
+
+m.add(nn.Linear(5,3))  # Linear module (input 10, output 3), applied on 1st slice of dimension 2
+m.add(nn.Linear(5,4))    # Linear module (input 10, output 2), applied on 2nd slice of dimension 2
+
+print(m)
+out = m.forward(tnet.randn(5))
+print(out)
+
+print("Bottle example")
+inp = tnet.randn(4, 5, 3, 10)
+print(inp.shape)
+m = nn.Bottle(nn.Linear(10, 2))
+print(m)
+out = m.forward(inp)
+print(out.shape)
