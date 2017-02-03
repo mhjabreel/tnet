@@ -44,13 +44,13 @@ numpy.random.seed(1337)  # for reproducibility
 
 import theano
 
-
+print("Running on: " + theano.config.device)
 
 
 def get_iterator(data):
     data = BatchDataset(
         dataset=data,
-        batch_size=64
+        batch_size=128
     )
     return DatasetIterator(data)
 
@@ -67,7 +67,7 @@ model = nn.Sequential() \
     .add(nn.Linear(28 * 28, 10))
     #.add(nn.SoftMax())
 
-
+print(model)
 def on_start_poch_handler(args):
     train_dataset.resample()
     model.training()
@@ -89,7 +89,21 @@ def on_end_epoch_handler(args):
     print("elapsed time: %d s" % (args.end_time - args.start_time))
 
 
+    model.evaluate()
 
+    print("Testing")
+
+    acc_meter.reset()
+    loss_meter.reset()
+
+    p_y_given_x = model.forward(X_test)
+    loss = criterion.forward(p_y_given_x, y_test)
+    loss_meter.add(loss)
+    acc_meter.add(p_y_given_x, y_test)
+
+
+
+    print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
 
 
 #iterator.on_sample += on_sample_handler
@@ -100,7 +114,7 @@ model.training()
 
 criterion = nn.CrossEntropyCriterion()
 
-optimizer = AdadeltaOptimizer()
+optimizer = SGDOptimizer()#AdadeltaOptimizer()
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler
@@ -108,7 +122,7 @@ trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 
-trainer.train(iterator,  max_epoch=5)
+trainer.train(iterator,learning_rate=0.01,  max_epoch=5)
 
 
 

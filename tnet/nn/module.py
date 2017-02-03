@@ -21,6 +21,7 @@ from abc import ABCMeta, abstractmethod
 import tnet
 import numpy as np
 import theano
+from theano.tensor.sharedvar import TensorSharedVariable
 import math
 
 __all__ = [
@@ -107,7 +108,7 @@ class Module(object):
     def _update_output(self, input_or_inputs):
 
         input_or_inputs = self._check_input(input_or_inputs)
-        assert isinstance(input_or_inputs, tnet.Variable) or \
+        assert isinstance(input_or_inputs, TensorSharedVariable) or \
                isinstance(input_or_inputs, T.TensorConstant) or \
                isinstance(input_or_inputs, T.TensorVariable)
 
@@ -127,9 +128,9 @@ class Module(object):
         out = self._update_output(input_or_inputs)
 
         if type(out) == list:
-            self._output = [tnet.Variable(s.eval()) for s in out]
+            self._output = [s.eval() for s in out]
         else:
-            self._output = tnet.Variable(out.eval())
+            self._output = out.eval()
 
         return self._output
 

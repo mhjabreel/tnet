@@ -67,7 +67,7 @@ class SpatialConvolution(Module):
                                               size=self._filter_shape),
                                               theano.config.floatX)
 
-        self._W = tnet.DifferentiableVariable(self._W_values)
+        self._W = tnet.Parameter(self._W_values)
 
         if self._has_bias:
 
@@ -75,7 +75,7 @@ class SpatialConvolution(Module):
             self._b_values = np.array(np.zeros(self._n_output_plane),
                                                       theano.config.floatX)
 
-            self._b = tnet.DifferentiableVariable(self._b_values)
+            self._b = tnet.Parameter(self._b_values)
 
 
     def _update_output(self, inp):

@@ -61,28 +61,29 @@ class Linear(Module):
         nin = self._input_size
         nout = self._output_size
 
-        stdv = 1. / np.sqrt(nout) #np.sqrt(6. / (nin + nout))#
+        stdv = 1. / np.sqrt(nin) #np.sqrt(6. / (nin + nout))#
 
-        self._W_values = np.array(np.random.uniform(low=-stdv,
+        W_values = np.array(np.random.uniform(low=-stdv,
                                               high=stdv,
                                               size=(nin, nout)),
                             theano.config.floatX)
 
-        self._W = tnet.DifferentiableVariable(self._W_values)#theano.shared(self._W_values, borrow=True)
+        self._W = tnet.Parameter(W_values)#theano.shared(self._W_values, borrow=True)
 
 
         if self._has_bias:
 
-            self._b_values = np.array(np.random.uniform(low=-stdv,
+            _b_values = np.array(np.random.uniform(low=-stdv,
                                                   high=stdv,
                                                   size=( nout)),
                                 theano.config.floatX)#np.array(np.zeros(nout), theano.config.floatX)
 
-            self._b = tnet.DifferentiableVariable(self._b_values)#, borrow=True)
+            self._b = tnet.Parameter(_b_values)#, borrow=True)
 
 
 
     def _update_output(self, inp):
+
         inp = super(Linear, self)._update_output(inp)
 
         if inp.ndim == 1 or inp.ndim == 2:
@@ -92,6 +93,7 @@ class Linear(Module):
             return y
         else:
             raise Exception("input must be vector or matrix")
+        
 
     @property
     def parameters(self):

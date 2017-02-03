@@ -63,20 +63,50 @@ kh = 3
 
 def get_iterator(data):
     data = BatchDataset(
-        dataset=ShuffleDataset(
-            dataset=data
-        ),
-        batch_size=128
+        dataset=data,
+        batch_size=32
     )
-    iterator = DatasetIterator(data)
+    return DatasetIterator(data)
 
-    return iterator
+train_dataset, [X_test, y_test] = mnist.get_data()
+train_dataset = ShuffleDataset(dataset=train_dataset)
+X_test = numpy.reshape(X_test, (X_test.shape[0], 1, 28, 28))
 
-
+iterator = get_iterator(train_dataset)
 
 loss_meter  = meter.AverageValueMeter()
 acc_meter  = meter.AccuracyMeter()
 
+model = nn.Sequential() \
+    .add(nn.SpatialConvolution(1, nb_filters, 3, 3)) \
+    .add(nn.ReLU()) \
+    .add(nn.SpatialConvolution(nb_filters, nb_filters, 3, 3)) \
+    .add(nn.ReLU()) \
+    .add(nn.SpatialMaxPooling(2, 2)) \
+    .add(nn.Dropout(0.25)) \
+    .add(nn.Flatten()) \
+    .add(nn.Linear(nb_filters * 12 * 12, 128)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.5)) \
+    .add(nn.Linear(128, nb_classes)) \
+    .add(nn.SoftMax())
+
+
+def eval():
+    model.evaluate()
+
+
+    acc_meter.reset()
+    loss_meter.reset()
+
+    p_y_given_x = model.forward(X_test)
+    loss = criterion.forward(p_y_given_x, y_test)
+    loss_meter.add(loss)
+    acc_meter.add(p_y_given_x, y_test)
+
+criterion = nn.ClassNLLCriterion()
+
+print(model)
 def on_sample_handler(args):
 
     x = args.sample["input"]
@@ -100,41 +130,20 @@ def on_forward_handler(args):
 
 def on_end_epoch_handler(args):
     print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
-    print("elapsed time: %2.2f seconds" % (args.end_time - args.start_time))
+    print("elapsed time: %d seconds" % (args.end_time - args.start_time))
+    eval()
 
 
 
-train_dataset, [X_test, y_test] = mnist.get_data()
 
-X_test = numpy.reshape(X_test, (X_test.shape[0], 1, 28, 28))
-
-iterator = get_iterator(train_dataset)
 
 iterator.on_sample += on_sample_handler
-
-model = nn.Sequential() \
-    .add(nn.SpatialConvolution(1, nb_filters, 3, 3)) \
-    .add(nn.ReLU()) \
-    .add(nn.SpatialConvolution(nb_filters, nb_filters, 3, 3)) \
-    .add(nn.ReLU()) \
-    .add(nn.SpatialMaxPooling(2, 2)) \
-    .add(nn.Dropout(0.25)) \
-    .add(nn.Flatten()) \
-    .add(nn.Linear(nb_filters * 12 * 12, 128)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.5)) \
-    .add(nn.Linear(128, nb_classes)) \
-    .add(nn.SoftMax())
-
-
-
-criterion = nn.ClassNLLCriterion()
 
 model.training()
 
 criterion = nn.ClassNLLCriterion()
 
-optimizer = RMSpropOptimizer()
+optimizer = SGDOptimizer()
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler
@@ -144,18 +153,4 @@ trainer.on_end_epoch += on_end_epoch_handler
 model.training()
 trainer.train(iterator, max_epoch=12)
 
-model.evaluate()
-
-print("Testing")
-
-acc_meter.reset()
-loss_meter.reset()
-
-p_y_given_x = model.forward(X_test)
-loss = criterion.forward(p_y_given_x, y_test)
-loss_meter.add(loss)
-acc_meter.add(p_y_given_x, y_test)
-
-
-
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
+eval()

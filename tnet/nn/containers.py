@@ -104,25 +104,8 @@ class Bottle(Container):
 
     def _update_output(self, inp):
 
-
         inp = self._check_input(inp)
-        d = self._nb_input_dim + 1
-        batch_dims = inp.ndim - d
-        print(batch_dims)
-        if batch_dims >= 1:
-
-            input_shape = inp.shape
-            print(input_shape[d:])
-            inp = T.reshape(inp, (-1, ) + input_shape[d:], ndim=batch_dims + 1)
-            print(inp.ndim)
-            out = self._module(inp)
-            out_shape = out.shape
-            print(out.ndim)
-            out = T.reshape(out, (-1, input_shape[1]) + out_shape[d:], ndim=3)
-        else:
-            out = self._module(inp)
-
-        return out
+        pass
 
 
 

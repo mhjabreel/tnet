@@ -20,6 +20,7 @@ from six import integer_types
 from six.moves import xrange
 
 import theano
+import theano.tensor as T
 from theano.configparser import config
 from theano.gof import Apply, Op
 from theano.tensor import  as_tensor_variable
@@ -37,6 +38,83 @@ python_any = any
 python_all = all
 
 
+__all__ = ["Linear", "linear"]
+
+class Linear(Op):
+
+    def make_node(self, x, W, b=None):
+        """WRITEME"""
+
+        x = as_tensor_variable(x)
+
+        outputs = [x.type()]
+        return Apply(self, [x, W, b], outputs)
+
+    def perform(self, node, inputs, outputs):
+
+        b = None
+        if len(inputs) == 3:
+            x, W, b = inputs
+        elif len(inputs) == 2:
+            x, W = inputs
+        else:
+            raise Exception("Unexpected no of inputs")
+
+        if x.ndim == 1 or x.ndim == 2:
+            y = numpy.dot(x, W)
+            if not b is None:
+                y += b
+        else:
+            raise Exception("input must be vector or matrix")
+
+        outputs[0] = y
+
+    def infer_shape(self, node, in_shapes):
+        x_shape = in_shapes[0]
+        W_shape = in_shapes[1]
+        print(in_shapes)
+
+        assert len(x_shape) in [1, 2]
+        out_shape = []
+        if len(x_shape) == 2:
+            out_shape.append(x_shape[0])
+
+        out_shape.append(W_shape[0])
+        out_shapes = [out_shape]
+
+        return out_shapes
+
+    def grad(self, inputs, g_outputs):
+
+        b = None
+        gz, = g_outputs
+        if len(inputs) == 3:
+            x, W, b = inputs
+            xdim, wdim, bdim, gdim = x.type.ndim, W.type.ndim, b.type.ndim, gz.type.ndim
+            print(xdim, wdim, bdim, gdim)
+        elif len(inputs) == 2:
+            x, W = inputs
+        else:
+            raise Exception("Unexpected no of inputs")
+
+
+
+        dy_dx = numpy.dot(gz, W)
+        dy_dW = numpy.dot(gz, x)
+
+        if not b is None:
+            print(b.shape)
+            one = numpy.ones_like(b)
+            print(one.shape)
+            dy_db = numpy.dot(gz, one.T)
+            xdim, wdim, bdim, gdim = dy_dx.type.ndim, dy_dW.type.ndim, dy_db.type.ndim, gz.type.ndim
+            print(xdim, wdim, bdim, gdim)
+            return dy_dx, dy_dW, one
+
+        return dy_dx, dy_dW
+
+
+linear = Linear()
 
 class SplitList(Op):
     """Partition a `TensorVariable` along some axis.
@@ -74,19 +152,18 @@ class SplitList(Op):
         broadcastable.pop(self.dim)
         n = x.shape[self.dim]
 
+        def _step(i):
+            return [i]
 
-        inputs = [x]
         out_type = theano.tensor.TensorType(x.dtype, broadcastable)
-        #outputs = [out_type()]
-        out_types, _ = theano.scan(lambda _ : out_type(),sequences=[T.arange(n)])
+        outputs = [out_type()]
+        out_types, _ = theano.scan(_step ,sequences=[T.arange(n)], outputs_info=[])
 
-        get_out_types = theano.function([], outputs=out_types)
-        outputs = get_out_types()
-        print(outputs)
+        print(out_types)
 
 
 
-        return Apply(self, inputs, outputs)
+        return Apply(self, [x], outputs)
 
     def perform(self, node, inputs, outputs):
         """WRITEME"""

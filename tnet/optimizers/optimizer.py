@@ -121,8 +121,9 @@ class Trainer(object):
         g_params = []
 
         for p in self._network.parameters:
-            if isinstance(p, tnet.DifferentiableVariable):
-                
+            if hasattr(p, 'grad'):
+            #if isinstance(p, tnet.Parameter):
+
                 g = T.grad(cost=cost, wrt=p)
                 params.append(p)
                 g_params.append(g)

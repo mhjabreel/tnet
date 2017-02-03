@@ -50,7 +50,7 @@ print("Running on: " + theano.config.device)
 def get_iterator(data):
     data = BatchDataset(
         dataset=data,
-        batch_size=64
+        batch_size=128
     )
     return DatasetIterator(data)
 
@@ -73,7 +73,7 @@ model = nn.Sequential() \
     .add(nn.Linear(512, 10)) #\
     #.add(nn.SoftMax())
 
-model = nn.Sequential().add(model)
+
 print(model)
 def on_sample_handler(args):
 
@@ -119,7 +119,7 @@ def eval():
 
 
 
-    print('Test set: Average loss: {:.4f}, Accuracy:{:.0f} % '.format(loss_meter.value[0], acc_meter.value))
+    print('Test set: Average loss: {:.4f}, Accuracy:{:.2f} % '.format(loss_meter.value[0], acc_meter.value))
 
 def on_end_epoch_handler(args):
 
@@ -141,4 +141,4 @@ trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 
-trainer.train(iterator, learning_rate=0.1, max_epoch=5)
+trainer.train(iterator, learning_rate=0.01, max_epoch=5)

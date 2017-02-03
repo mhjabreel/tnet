@@ -22,6 +22,8 @@ import theano
 import theano.tensor.basic
 from theano.tensor.basic import TensorType, _tensor_py_operators
 from theano.compile import shared_constructor, SharedVariable
+from theano.sandbox.cuda.type import CudaNdarrayType
+from theano.sandbox.cuda.basic_ops import HostFromGpu, GpuFromHost
 
 T  = theano.tensor
 func = theano.function
@@ -29,7 +31,7 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
-__all__ = ["Variable", "DifferentiableVariable"]
+__all__ = []
 
 class Variable(theano.tensor.sharedvar.TensorSharedVariable):
     """docstring for Variable."""
@@ -39,31 +41,32 @@ class Variable(theano.tensor.sharedvar.TensorSharedVariable):
             pass
         elif isinstance(value, np.ndarray):
             broadcastable = (False,) * len(value.shape)
-            type = TensorType(value.dtype, broadcastable=broadcastable)
+            t_type = TensorType(value.dtype, broadcastable=broadcastable) \
+                if theano.config.device == "cpu" else CudaNdarrayType(broadcastable=broadcastable)
 
-        super(Variable, self).__init__(type=type,
+
+        super(Variable, self).__init__(type=t_type,
                                 value=value,
                                 name=name,
-                                strict=True,
+                                strict=False,
                                 allow_downcast=True)
 
 
-        #self.transfer(config.device)
 
 
 
 
-
-    def __str__(self):
+    def __repr__(self):
 
         value = self.get_value()
-        t = value.dtype
+        t = str(value.dtype)
+        t = t[0].upper() + t[1:]
         size = value.shape
 
         value = str(value)
 
 
-        return value + "\n" + str(t) + "_tensor of size " + str(size)
+        return value + "\n" + str(t) + "Tensor of size " + str(size)
 
 
 
@@ -86,9 +89,9 @@ class Variable(theano.tensor.sharedvar.TensorSharedVariable):
 
 
 
-class DifferentiableVariable(Variable):
+class Parameter(Variable):
     """docstring for DifferentiableVariable."""
     def __init__(self, value, name=None):
-        super(DifferentiableVariable, self).__init__(value, name)
+        super(Parameter, self).__init__(value, name)
         gname = name + "_grad" if not name is None else None
         self.grad = self.zero_like(gname)#theano.shared(value * 0., gname)
