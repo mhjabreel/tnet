@@ -19,12 +19,12 @@ import numpy as np
 import math
 
 import theano
-import theano.tensor.basic
-from theano.tensor.basic import TensorType, _tensor_py_operators
+
+from theano.tensor.basic import _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
-from theano.sandbox.cuda.basic_ops import HostFromGpu, GpuFromHost
-from tnet.core.cuda import _Variable as CudaVariable
+
+from tnet.core.variable import _var, _Variable as TensorVariable
 
 T  = theano.tensor
 func = theano.function
@@ -34,25 +34,7 @@ config = theano.config
 
 
 
-class _var(object):
-    def __repr__(self):
-        value = self.container.value
-        t = str(value.dtype)
-        t = t[0].upper() + t[1:]
-        size = value.shape
-        value = str(value)
-        return value + "\n" + str(t) + "Tensor of size " + str(size)
-
-    def __str__(self):
-
-        return self.__repr__()
-
-    @property
-    def data(self):
-        return self.get_value()
-
-
-class _Variable(_var, theano.tensor.sharedvar.TensorSharedVariable):
+class _Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
     """docstring for Variable."""
     def __init__(self, value, name=None):
 
@@ -60,7 +42,7 @@ class _Variable(_var, theano.tensor.sharedvar.TensorSharedVariable):
             pass
         elif isinstance(value, np.ndarray):
             broadcastable = (False,) * len(value.shape)
-            t_type = TensorType(value.dtype, broadcastable=broadcastable)
+            t_type = CudaNdarrayType(broadcastable)
 
 
         super(_Variable, self).__init__(type=t_type,
@@ -70,16 +52,16 @@ class _Variable(_var, theano.tensor.sharedvar.TensorSharedVariable):
                                 allow_downcast=True)
 
 
-    def cuda(self):
+    def float32(self):
         v = self.get_value()
-        return CudaVariable(v, self.name)
+        return TensorVariable(v, self.name)
 
 
 
 @shared_constructor
-def variable_shared_constructor(value, name=None):
+def cuda_variable_shared_constructor(value, name=None):
     """
-    tnet._Variable Constructor for TensorType.
+    tnet.cuda._Variable Constructor for TensorType.
     Notes
     -----
     Regarding the inference of the broadcastable pattern...

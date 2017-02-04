@@ -24,17 +24,12 @@ from tnet import optimizers
 import numpy as np
 import theano
 import tnet
+import tnet.core
+
+if config.device.startswith('gpu') or config.init_gpu_device.startswith('gpu'):
+    import tnet.core.cuda
 
 
-
-
-@property
-def data(self):
-    return self.get_value()
-
-@data.setter
-def data(self, new_value):
-    self.set_value(new_value)
 
 def Variable(value, dtype=None, name=None):
     if not isinstance(value, np.ndarray):
@@ -42,23 +37,8 @@ def Variable(value, dtype=None, name=None):
             dtype = theano.config.floatX
         value = np.asarray(value, dtype=dtype)
 
-
-    def to_str(self):
-        value = self.get_value()
-        t = str(value.dtype)
-        t = t[0].upper() + t[1:]
-        size = value.shape
-        value = str(value)
-        return value + "\n" + t + "Variable of size " + str(size)
-
-
-    def zero_like(self, name=None):
-        value = self.get_value()
-        return Variable(np.zeros_like(value), name)
-
     var = theano.shared(value, name=name)
-    var.zero_like = lambda name=None : zero_like(var, name)
-    var.to_string = lambda : to_str(var)
+
 
     return var
 
@@ -67,7 +47,7 @@ def Parameter(value, dtype=None, name=None):
 
     var = Variable(value, dtype, name)
     g_name = name + "_grad" if not name is None else None
-    grad = var.zero_like(g_name)
+    grad = var.zeros_like(g_name)
     var.grad = grad
 
     return var
