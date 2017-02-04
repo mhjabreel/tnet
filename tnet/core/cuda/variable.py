@@ -35,7 +35,7 @@ config = theano.config
 
 
 
-class SharedVariable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
+class Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
 
 
     def float32(self):
@@ -75,7 +75,7 @@ def cuda_variable_shared_constructor(value, name=None, strict=False,
     type = CudaNdarrayType(broadcastable=broadcastable)
     #print("trying to return?")
     try:
-        rval = SharedVariable(type=type, value=_value, name=name, strict=strict)
+        rval = Variable(type=type, value=_value, name=name, strict=strict)
     except Exception as e:
         print("ERROR", e)
         raise

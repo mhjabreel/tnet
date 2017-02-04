@@ -30,7 +30,7 @@ if config.device.startswith('gpu') or config.init_gpu_device.startswith('gpu'):
     import tnet.core.cuda
 
 
-
+"""
 def Variable(value, dtype=None, name=None):
     if not isinstance(value, np.ndarray):
         if dtype is None:
@@ -52,6 +52,7 @@ def Parameter(value, dtype=None, name=None):
 
     return var
 
+"""
 def rand(*shape):
     x = np.random.random(shape).astype(theano.config.floatX)
     return tnet.Variable(x)
