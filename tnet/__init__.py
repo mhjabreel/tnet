@@ -46,8 +46,8 @@ def Variable(value, dtype=None, name=None):
 def Parameter(value, dtype=None, name=None):
 
     var = Variable(value, dtype, name)
-    g_name = name + "_grad" if not name is None else None
-    grad = var.zeros_like(g_name)
+    gname = name + "_grad" if not name is None else None
+    grad = to_shared(value * 0., name=gname)
     var.grad = grad
 
     return var

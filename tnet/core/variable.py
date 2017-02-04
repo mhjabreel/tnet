@@ -24,7 +24,7 @@ from theano.tensor.basic import TensorType, _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
 from theano.sandbox.cuda.basic_ops import HostFromGpu, GpuFromHost
-from tnet.core.cuda import SharedVariable as CudaVariable
+#from tnet.core.cuda import SharedVariable as CudaVariable
 
 T  = theano.tensor
 func = theano.function

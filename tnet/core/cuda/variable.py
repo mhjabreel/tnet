@@ -24,7 +24,7 @@ from theano.tensor.basic import _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
 from tnet.core.var import _var
-from tnet.core.variable import SharedVariable as TensorVariable
+#from tnet.core.variable import SharedVariable as TensorVariable
 
 
 T  = theano.tensor
@@ -73,7 +73,7 @@ def cuda_variable_shared_constructor(value, name=None, strict=False,
     if broadcastable is None:
         broadcastable = (False,) * len(value.shape)
     type = CudaNdarrayType(broadcastable=broadcastable)
-    print("trying to return?")
+    #print("trying to return?")
     try:
         rval = SharedVariable(type=type, value=_value, name=name, strict=strict)
     except Exception as e:
