@@ -136,6 +136,32 @@ class Parameter(Variable):
         cp.tag = copy.copy(self.tag)
         return cp
 
+    def cuda(self):
+
+        if isinstance(self.type, CudaNdarrayType):
+            return self
+
+        _value = theano._asarray(self.data, dtype='float32')
+        broadcastable = self.broadcastable
+        if broadcastable is None:
+            broadcastable = (False,) * len(_value.shape)
+        type = CudaNdarrayType(broadcastable=broadcastable)
+
+        return self.__class__(_value, self.name, type)
+
+    def float32(self):
+
+        if isinstance(self.type, TensorType) and self.dtype == np.float32:
+            return self
+
+        _value = theano._asarray(self.data, dtype='float32')
+        broadcastable = self.broadcastable
+        if broadcastable is None:
+            broadcastable = (False,) * len(_value.shape)
+        type = TensorType(_value.dtype, broadcastable=broadcastable)
+
+        return self.__class__(_value, self.name, type)
+
 #@shared_constructor
 def variable_shared_constructor(value, name=None, strict=False, allow_downcast=None,
                        borrow=False, broadcastable=None, target='cpu'):
