@@ -24,7 +24,7 @@ from theano.tensor.basic import TensorType, _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
 from theano.sandbox.cuda.basic_ops import HostFromGpu, GpuFromHost
-from tnet.core.cuda import _Variable as CudaVariable
+from tnet.core.cuda import SharedVariable as CudaVariable
 
 T  = theano.tensor
 func = theano.function
@@ -32,42 +32,10 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
+from tnet.core.var import _var
 
 
-class _var(object):
-    def __repr__(self):
-        value = self.container.value
-        t = str(value.dtype)
-        t = t[0].upper() + t[1:]
-        size = value.shape
-        value = str(value)
-        return value + "\n" + str(t) + "Tensor of size " + str(size)
-
-    def __str__(self):
-
-        return self.__repr__()
-
-    @property
-    def data(self):
-        return self.get_value()
-
-
-class _Variable(_var, theano.tensor.sharedvar.TensorSharedVariable):
-    """docstring for Variable."""
-    def __init__(self, value, name=None):
-
-        if isinstance(value, list):
-            pass
-        elif isinstance(value, np.ndarray):
-            broadcastable = (False,) * len(value.shape)
-            t_type = TensorType(value.dtype, broadcastable=broadcastable)
-
-
-        super(_Variable, self).__init__(type=t_type,
-                                value=value,
-                                name=name,
-                                strict=False,
-                                allow_downcast=True)
+class SharedVariable(_var, theano.tensor.sharedvar.TensorSharedVariable):
 
 
     def cuda(self):
@@ -75,11 +43,11 @@ class _Variable(_var, theano.tensor.sharedvar.TensorSharedVariable):
         return CudaVariable(v, self.name)
 
 
-
 @shared_constructor
-def variable_shared_constructor(value, name=None):
+def variable_shared_constructor(value, name=None, strict=False, allow_downcast=None,
+                       borrow=False, broadcastable=None, target='cpu'):
     """
-    tnet._Variable Constructor for TensorType.
+    SharedVariable Constructor for TensorType.
     Notes
     -----
     Regarding the inference of the broadcastable pattern...
@@ -87,5 +55,20 @@ def variable_shared_constructor(value, name=None):
     dimension, so the default broadcastable is ``(False,)*len(value.shape)``.
     The optional `broadcastable` argument will override this default.
     """
+    if target != 'cpu':
+        raise TypeError('not for cpu')
 
-    return _Variable(value=np.array(value), name=name)
+    if not isinstance(value, np.ndarray):
+        raise TypeError()
+
+    # if no broadcastable is given, then the default is to assume that
+    # the value might be resized in any dimension in the future.
+    #
+    if broadcastable is None:
+        broadcastable = (False,) * len(value.shape)
+    type = TensorType(value.dtype, broadcastable=broadcastable)
+    return SharedVariable(type=type,
+                                value=np.array(value, copy=(not borrow)),
+                                name=name,
+                                strict=strict,
+                                allow_downcast=allow_downcast)

@@ -23,8 +23,9 @@ import theano
 from theano.tensor.basic import _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
+from tnet.core.var import _var
+from tnet.core.variable import SharedVariable as TensorVariable
 
-from tnet.core.variable import _var, _Variable as TensorVariable
 
 T  = theano.tensor
 func = theano.function
@@ -34,22 +35,7 @@ config = theano.config
 
 
 
-class _Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
-    """docstring for Variable."""
-    def __init__(self, value, name=None):
-
-        if isinstance(value, list):
-            pass
-        elif isinstance(value, np.ndarray):
-            broadcastable = (False,) * len(value.shape)
-            t_type = CudaNdarrayType(broadcastable)
-
-
-        super(_Variable, self).__init__(type=t_type,
-                                value=value,
-                                name=name,
-                                strict=False,
-                                allow_downcast=True)
+class SharedVariable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
 
 
     def float32(self):
@@ -59,15 +45,38 @@ class _Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
 
 
 @shared_constructor
-def cuda_variable_shared_constructor(value, name=None):
+def cuda_variable_shared_constructor(value, name=None, strict=False,
+                            allow_downcast=None, borrow=False,
+                            broadcastable=None, target='gpu'):
     """
-    tnet.cuda._Variable Constructor for TensorType.
-    Notes
-    -----
-    Regarding the inference of the broadcastable pattern...
-    The default is to assume that the value might be resized in any
-    dimension, so the default broadcastable is ``(False,)*len(value.shape)``.
-    The optional `broadcastable` argument will override this default.
+    SharedVariable Constructor for CudaNdarrayType.
     """
+    if target != 'gpu':
+        raise TypeError('not for gpu')
 
-    return _Variable(value=np.array(value), name=name)
+    # THIS CONSTRUCTOR TRIES TO CAST VALUE TO A FLOAT32, WHICH THEN GOES ONTO THE CARD
+    # SO INT shared vars, float64 shared vars, etc. all end up on the card.
+    # THIS IS NOT THE DEFAULT BEHAVIOUR THAT WE WANT.
+    # SEE float32_shared_constructor
+
+    # TODO: what should strict mean in this context, since we always have to make a copy?
+    if strict:
+        _value = value
+    else:
+        _value = theano._asarray(value, dtype='float32')
+
+    if not isinstance(_value, np.ndarray):
+        raise TypeError('ndarray required')
+    if _value.dtype.num != CudaNdarrayType.typenum:
+        raise TypeError('float32 ndarray required')
+
+    if broadcastable is None:
+        broadcastable = (False,) * len(value.shape)
+    type = CudaNdarrayType(broadcastable=broadcastable)
+    print("trying to return?")
+    try:
+        rval = SharedVariable(type=type, value=_value, name=name, strict=strict)
+    except Exception as e:
+        print("ERROR", e)
+        raise
+    return rval
