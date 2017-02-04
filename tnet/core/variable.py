@@ -53,10 +53,10 @@ class Variable(_var, _tensor_py_operators, SharedVariable):
             super(Variable, self).__init__(value.name, value.type, value=None, strict=None,
                              allow_downcast=None, container=value.container)
         else:
-            
+
             if not isinstance(value, np.ndarray):
                 raise TypeError()
-    
+
             if type is None:
                 broadcastable = (False,) * len(value.shape)
                 type = TensorType(value.dtype, broadcastable=broadcastable)
@@ -97,7 +97,7 @@ class Variable(_var, _tensor_py_operators, SharedVariable):
 
         if isinstance(self.type, CudaNdarrayType):
             return self
-        
+
         _value = theano._asarray(self.data, dtype='float32')
         broadcastable = self.broadcastable
         if broadcastable is None:
@@ -105,12 +105,12 @@ class Variable(_var, _tensor_py_operators, SharedVariable):
         type = CudaNdarrayType(broadcastable=broadcastable)
 
         return Variable(_value, self.name, type)
-    
+
     def float32(self):
 
         if isinstance(self.type, TensorType) and self.dtype == np.float32:
             return self
-        
+
         _value = theano._asarray(self.data, dtype='float32')
         broadcastable = self.broadcastable
         if broadcastable is None:
@@ -131,6 +131,10 @@ class Parameter(Variable):
         self.grad = Variable(self.data, gname)
         self.grad.zero()
 
+    def clone(self):
+        cp = self.__class__(self, self.name)
+        cp.tag = copy.copy(self.tag)
+        return cp
 
 #@shared_constructor
 def variable_shared_constructor(value, name=None, strict=False, allow_downcast=None,
