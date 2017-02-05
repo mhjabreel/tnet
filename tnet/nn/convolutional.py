@@ -177,3 +177,36 @@ class TemporalConvolution(SpatialConvolution):
         out = T.reshape(out, (out.shape[0], out.shape[1], out.shape[2]))
         out = out.dimshuffle(0, 2, 1)
         return out
+
+
+class VolumetricConvolution(Module):
+    """
+    Applies a 3D convolution over an input image composed of several input planes.
+    The input tensor in forward(input) is expected to be a 4D tensor (nInputPlane x time x height x width).
+
+    The parameters are the following:
+
+    nb_ichannels: The number of expected input channels in the image given into forward().
+    nb_ochannels: The number of output channels the convolution layer will produce.
+    kT: The kernel size of the convolution in time
+    kW: The kernel width of the convolution
+    kH: The kernel height of the convolution
+    dT: The step of the convolution in the time dimension. Default is 1.
+    dW: The step of the convolution in the width dimension. Default is 1.
+    dH: The step of the convolution in the height dimension. Default is 1.
+    padT: Additional zeros added to the input plane data on both sides of time axis. Default is 0. (kT-1)/2 is often used here.
+    padW: Additional zeros added to the input plane data on both sides of width axis. Default is 0. (kW-1)/2 is often used here.
+    padH: Additional zeros added to the input plane data on both sides of height axis. Default is 0. (kH-1)/2 is often used here.
+    Note that depending of the size of your kernel, several (of the last) columns or rows of the input image might be lost. It is up to the user to add proper padding in images.
+
+    If the input image is a 4D tensor nb_ichannels x time x height x width, the output image size will be nb_ochannels x otime x oheight x owidth where
+
+    otime  = floor((time  + 2*padT - kT) / dT + 1)
+    owidth  = floor((width  + 2*padW - kW) / dW + 1)
+    oheight  = floor((height  + 2*padH - kH) / dH + 1)
+    The parameters of the convolution can be found in self.weight (Parameter of size nb_ichannels x nb_ochannels x kT x kH x kW) and self.bias (Parameter of size nb_ochannels).
+
+    """
+    def __init__(self, arg):
+        super(VolumetricConvolution, self).__init__()
+        self.arg = arg
