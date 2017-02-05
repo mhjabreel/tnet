@@ -22,7 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import tnet.cuda as cuda
+
 from tnet import nn
 from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
@@ -61,16 +61,20 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 
 print(args)
+
 numpy.random.seed(1337)  # for reproducibility
 
-cuda.device(0)
+if args.cuda :
+    import tnet.cuda as cuda
+    cuda.device(0)
+
 print("Running on: " + tnet.device)
 
 
 def get_iterator(data):
     data = BatchDataset(
         dataset=data,
-        batch_size=128
+        batch_size=args.batch_size
     )
     return DatasetIterator(data)
 
