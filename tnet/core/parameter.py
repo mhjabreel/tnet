@@ -14,7 +14,14 @@
 # =============================================================================
 
 from __future__ import absolute_import
+import numpy as np
+from tnet import Variable
 
-from tnet.core.variable import *
-from tnet.core.extensions import *
-from tnet.core.delegator import Delegator
+
+class Parameter(Variable):
+    """docstring for Parameter."""
+    def __init__(self, value, name=None, type=None):
+        super(Parameter, self).__init__(value, name, type)
+        gname = name + "_grad" if not name is None else None
+        self.grad = Variable(np.array(self.container.value), gname)
+        self.grad.zero()

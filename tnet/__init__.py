@@ -25,11 +25,14 @@ import numpy as np
 import theano
 import tnet
 import tnet.core
+config = theano.config
+to_shared = theano.shared
+T = theano.tensor
 
-if config.device.startswith('gpu') or config.init_gpu_device.startswith('gpu'):
-    import tnet.core.cuda
 
 
+
+device = 'cpu'
 """
 def Variable(value, dtype=None, name=None):
     if not isinstance(value, np.ndarray):
@@ -52,7 +55,7 @@ def Parameter(value, dtype=None, name=None):
 
     return var
 
-"""
+#"""
 def rand(*shape):
     x = np.random.random(shape).astype(theano.config.floatX)
     return tnet.Variable(x)

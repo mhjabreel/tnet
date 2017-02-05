@@ -63,12 +63,12 @@ class LookupTable(Module):
 
         nin = self._n_index
         nout = self._n_output
-        self._W_values = np.array(np.random.uniform(low=-0.05,
+        _W_values = np.array(np.random.uniform(low=-0.05,
                                               high=0.05,
                                               size=(nin, nout)),
                             theano.config.floatX)
 
-        self._W = theano.shared(self._W_values, borrow=True)
+        self._W = tnet.Parameter(_W_values)
 
     def _update_output(self, inp):
 
@@ -83,11 +83,3 @@ class LookupTable(Module):
     @property
     def parameters(self):
         return [self._W]
-
-    @property
-    def parameter_values(self):
-        return [self._W_values]
-
-    @parameter_values.setter
-    def parameter_values(self, values):
-        self._W_values = values

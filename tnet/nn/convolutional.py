@@ -60,22 +60,24 @@ class SpatialConvolution(Module):
         self._filter_shape = (self._n_output_plane, self._n_input_plane, self._kh, self._kw)
         self._image_shape = (None, self._n_input_plane, None, None)
 
-        #stdv = 1 / math.sqrt(self._kw * self._kh * self._n_input_plane)
+        #stdv = 1. / np.sqrt(self._kw * self._kh * self._n_input_plane)
         stdv = np.sqrt(6. / (self._n_input_plane + self._n_output_plane))
-        self._W_values = np.array(np.random.uniform(low=-stdv,
+        _W_values = np.array(np.random.uniform(low=-stdv,
                                               high=stdv,
                                               size=self._filter_shape),
-                                              theano.config.floatX)
+                                        theano.config.floatX)
 
-        self._W = tnet.Parameter(self._W_values)
+        self._W = tnet.Parameter(_W_values)
 
         if self._has_bias:
 
 
-            self._b_values = np.array(np.zeros(self._n_output_plane),
-                                                      theano.config.floatX)
+            _b_values = np.array(np.random.uniform(low=-stdv,
+                                            high=stdv,
+                                            size=self._n_output_plane),
+                                        theano.config.floatX)
 
-            self._b = tnet.Parameter(self._b_values)
+            self._b = tnet.Parameter(_b_values)
 
 
     def _update_output(self, inp):

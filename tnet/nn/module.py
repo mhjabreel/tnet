@@ -22,6 +22,7 @@ import tnet
 import numpy as np
 import theano
 from theano.tensor.sharedvar import TensorSharedVariable
+from theano.sandbox.cuda.var import CudaNdarraySharedVariable
 import math
 
 __all__ = [
@@ -58,7 +59,7 @@ class Module(object):
             self._input_info = None
 
         self._running_mode = RunningMode.EVAL
-
+        self._params = []
         self._declare(**kwargs)
         self._compile(**kwargs)
 
@@ -66,20 +67,20 @@ class Module(object):
     def _compile(self, **kwargs):
         if hasattr(self, '_input_info') and not self._input_info is None:
             input_shape = self._input_info.shape
-
             input_shape = [s if not s is None else 1 for s in input_shape]
 
-            mock_input = np.array(np.zeros([1] + input_shape), self._input_info.dtype)
+            mock_input = np.array(np.random.random([1] + input_shape), self._input_info.dtype)
 
             self.forward(mock_input)
         else:
-            self.forward(np.random.rand(1) + 1.5)
+            self.forward(np.random.rand(1).astype(theano.config.floatX) + 1.5)
 
 
 
     def _check_input(self, input_or_inputs):
 
         type_of_input = type(input_or_inputs)
+
 
         if type_of_input == list or type_of_input == tuple:
 
@@ -98,7 +99,7 @@ class Module(object):
             input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else \
                                inp for inp in input_or_inputs]
         elif type_of_input == np.ndarray:
-            input_or_inputs = to_tensor(input_or_inputs)
+            input_or_inputs = tnet.Variable(input_or_inputs)
         else:
             if not (type_of_input == T.TensorVariable or type_of_input == T.TensorConstant or type_of_input == tnet.Variable):
                 raise  ValueError("Wrong types are passed")
@@ -108,7 +109,8 @@ class Module(object):
     def _update_output(self, input_or_inputs):
 
         input_or_inputs = self._check_input(input_or_inputs)
-        assert isinstance(input_or_inputs, TensorSharedVariable) or \
+
+        assert isinstance(input_or_inputs, (CudaNdarraySharedVariable, TensorSharedVariable, tnet.Variable)) or \
                isinstance(input_or_inputs, T.TensorConstant) or \
                isinstance(input_or_inputs, T.TensorVariable)
 
@@ -138,6 +140,7 @@ class Module(object):
 
 
 
+
     def _set_running_mode(self, mode):
         self._running_mode = mode
 
@@ -154,7 +157,7 @@ class Module(object):
 
     @property
     def parameters(self):
-        return []
+        return self._params
 
     @property
     def parameter_values(self):

@@ -69,7 +69,7 @@ class Linear(Module):
                             theano.config.floatX)
 
         self._W = tnet.Parameter(W_values)#theano.shared(self._W_values, borrow=True)
-
+        self._params.append(self._W)
 
         if self._has_bias:
 
@@ -79,39 +79,26 @@ class Linear(Module):
                                 theano.config.floatX)#np.array(np.zeros(nout), theano.config.floatX)
 
             self._b = tnet.Parameter(_b_values)#, borrow=True)
+            self._params.append(self._b)
 
 
 
     def _update_output(self, inp):
 
         inp = super(Linear, self)._update_output(inp)
-
         if inp.ndim == 1 or inp.ndim == 2:
             y = T.dot(inp, self._W)
             if self._has_bias:
                 y += self._b
             return y
+
         else:
             raise Exception("input must be vector or matrix")
-        
 
-    @property
-    def parameters(self):
-        if self._has_bias:
-            return [self._W, self._b]
-        return [self._W]
 
-    @property
-    def parameter_values(self):
-        if self._has_bias:
-            return [self._W_values, self._b_values]
-        return [self._W_values]
 
-    @parameter_values.setter
-    def parameter_values(self, values):
-        self._W_values = values[0]
-        if self._has_bias:
-            self._b_values = values[1]
+
+
 
     def get_grad_prams_values(self):
         return self._W.grad

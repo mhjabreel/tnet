@@ -103,13 +103,13 @@ class Trainer(object):
     An abstract methdo to get the input and target place holders.
     This method shuld be implemented by the extended classes.
     """
-    def _get_placeholders(self):
+    def _get_delegators(self):
         pass
 
 
     def _initialization(self):
 
-        x_input, y_input = self._get_placeholders()
+        x_input, y_input = self._get_delegators()
 
         p_y_given_x = self._network(x_input)
 
@@ -178,7 +178,7 @@ class OnlineTrainer(Trainer):
     def __init__(self, network, criterion, optimizer):
         super(OnlineTrainer, self).__init__(network, criterion, optimizer)
 
-    def _get_placeholders(self):
+    def _get_delegators(self):
         if not self._network.input_info is None:
             inf = self._network.input_info
             try:
@@ -186,21 +186,20 @@ class OnlineTrainer(Trainer):
                 x = []
                 k = 0
                 for i in inf:
-                    ndim = len(i.shape)
-                    broadcast = (False,) * ndim
-                    x.append(T.TensorType(i.dtype, broadcast)('x_%d' % k))  # data, presented as rasterized images
+                    #ndim = len(i.shape)
+                    #broadcast = (False,) * ndim
+                    xi = tnet.Delegator(i.dtype, shape=i.shape, name='train_input_%d' % k, strict=True)
+                    x.append(xi)  # data, presented as rasterized imagesT.TensorType(i.dtype, broadcast)('x_%d' % k)
                     k += 1
             except:
                 try:
-                    ndim = len(inf.shape)
-                    broadcast = (False,) * ndim
-                    x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
+                    x = tnet.Delegator(inf.dtype, shape=inf.shape, name='train_input', strict=True)
                 except:
                     raise ValueError("Unsupported input info %s" % (inf))
         else:
-            x = T.vector('x')
+            x = tnet.Delegator('float32', ndim=1, name='train_input')
 
-        y = T.iscalar('y')  # labels, presented as 1D vector of [int] labels
+        y = tnet.Delegator('int32', ndim=0, name='train_target')#T.iscalar('y')  # labels, presented as 1D vector of [int] labels
 
         return x, y
 
@@ -208,32 +207,29 @@ class MinibatchTrainer(Trainer):
     def __init__(self, network, criterion, optimizer):
         super(MinibatchTrainer, self).__init__(network, criterion, optimizer)
 
-    def _get_placeholders(self):
+    def _get_delegators(self):
         if not self._network.input_info is None:
-
-
             inf = self._network.input_info
             try:
                 _ = len(inf) # model has multiple inputs ?
                 x = []
                 k = 0
                 for i in inf:
-                    ndim = len(i.shape) + 1
-                    broadcast = (False,) * ndim
-                    x.append(T.TensorType(i.dtype, broadcast)('x_%d' % k))  # data, presented as rasterized images
+                    #ndim = len(i.shape)
+                    #broadcast = (False,) * ndim
+                    xi = tnet.Delegator(i.dtype, shape=[None,] + i.shape, name='train_input_%d' % k, strict=True)
+                    x.append(xi)  # data, presented as rasterized imagesT.TensorType(i.dtype, broadcast)('x_%d' % k)
                     k += 1
             except:
                 try:
-                    ndim = len(inf.shape) + 1
-                    broadcast = (False,) * ndim
-                    x = T.TensorType(inf.dtype, broadcast)('x')  # data, presented as rasterized images
-                except:
+                    x = tnet.Delegator(inf.dtype, shape=[None,] + inf.shape, name='train_input', strict=True)
+                except Exception as e:
+                    #print(e)
                     raise ValueError("Unsupported input info %s" % (inf))
         else:
+            x = tnet.Delegator('float32', ndim=2, name='train_input')
 
-            x = T.matrix('x')
-
-        y = T.ivector('y')  # labels, presented as 1D vector of [int] labels
+        y = tnet.Delegator('int32', ndim=1, name='train_target')#T.iscalar('y')  # labels, presented as 1D vector of [int] labels
 
         return x, y
 
@@ -247,7 +243,7 @@ class Optimizer(object):
     An abstract methdo to get the placeholders of the optimizer's parameters.
     This method shuld be implemented by the extended classes.
     """
-    def _get_placeholders(self):
+    def _get_delegators(self):
         pass
 
 
@@ -270,7 +266,7 @@ class Optimizer(object):
         pass
 
     def define_updates(self, params):
-        place_holders = self._get_placeholders()
+        place_holders = self._get_delegators()
         updates = self._get_updates(params, place_holders)
 
         self._update_fn = theano.function(inputs=place_holders, outputs=[], updates=updates)
@@ -278,7 +274,7 @@ class Optimizer(object):
 
     def update(self, **config):
 
-        pnames = [p.name for p in self._get_placeholders()]
+        pnames = [p.name for p in self._get_delegators()]
         inputs = []
 
         for p in pnames:

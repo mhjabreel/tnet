@@ -65,9 +65,8 @@ class AdamxOptimizer(Optimizer):
     An abstract methdo to get the placeholders of the optimizer's parameters.
     This method shuld be implemented by the extended classes.
     """
-    def _get_placeholders(self):
-        learning_rate = T.fscalar(name='learning_rate')
-
+    def _get_delegators(self):
+        learning_rate = tnet.Delegator('float32', name='learning_rate', ndim=0)#T.scalar(name='learning_rate')
         return [learning_rate]
 
 

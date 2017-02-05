@@ -52,6 +52,7 @@ class Container(Module):
     def add(self, module):
         assert isinstance(module, Module)
         self._modules.append(module)
+        self._params += module.parameters
         return self
 
     @property

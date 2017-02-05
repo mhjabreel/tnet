@@ -14,4 +14,31 @@
 # =============================================================================
 
 from __future__ import absolute_import
-from tnet.core.cuda.variable import *
+import copy
+import numpy as np
+
+
+import theano
+import theano.tensor.basic
+
+import theano.sandbox.cuda
+from theano.sandbox.cuda import use
+# We can't test the driver during import of theano.sandbox.cuda as
+# this cause circular import dependency. So we also test it manually
+# after the import
+if theano.sandbox.cuda.cuda_available:
+    import theano.sandbox.cuda.tests.test_driver
+
+    if config.enable_initial_driver_test:
+        theano.sandbox.cuda.tests.test_driver.test_nvidia_driver1()
+
+
+def device(d):
+    if type(d) == int:
+        if d < 0:
+            d = 'cpu'
+        else:
+            d = gpu +  str(d)
+
+    assert type(d) == string
+    use(d, force=config.force_device, default_to_move_computation_to_gpu=False,move_shared_float32_to_gpu=False, test_driver=False)

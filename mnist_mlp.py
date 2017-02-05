@@ -23,6 +23,7 @@ from __future__ import print_function
 
 
 from tnet import nn
+import tnet.cuda as cuda
 from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
 from tnet.optimizers import *
@@ -42,9 +43,8 @@ import numpy
 
 numpy.random.seed(1337)  # for reproducibility
 
-import theano
-
-print("Running on: " + theano.config.device)
+cuda.device(0)
+print("Running on: " + tnet.device)
 
 
 def get_iterator(data):
@@ -107,17 +107,12 @@ def on_forward_handler(args):
 
 def eval():
     model.evaluate()
-
-
     acc_meter.reset()
     loss_meter.reset()
-
     p_y_given_x = model.forward(X_test)
     loss = criterion.forward(p_y_given_x, y_test)
     loss_meter.add(loss)
     acc_meter.add(p_y_given_x, y_test)
-
-
 
     print('Test set: Average loss: {:.4f}, Accuracy:{:.2f} % '.format(loss_meter.value[0], acc_meter.value))
 
@@ -141,4 +136,4 @@ trainer.on_start_poch += on_start_poch_handler
 trainer.on_end_epoch += on_end_epoch_handler
 
 
-trainer.train(iterator, learning_rate=0.01, max_epoch=5)
+trainer.train(iterator, learning_rate=0.1, max_epoch=5)

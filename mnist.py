@@ -21,7 +21,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
+import argparse
+import tnet.cuda as cuda
 from tnet import nn
 from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
@@ -40,11 +41,30 @@ import timeit
 
 import numpy
 
+# Training settings
+parser = argparse.ArgumentParser(description='tnet MNIST Example')
+parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+                    help='input batch size for training (default: 64)')
+parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+                    help='input batch size for testing (default: 1000)')
+parser.add_argument('--epochs', type=int, default=5, metavar='N',
+                    help='number of epochs to train (default: 10)')
+parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
+                    help='learning rate (default: 0.1)')
+parser.add_argument('--momentum', type=float, default=0, metavar='M',
+                    help='SGD momentum (default: 0)')
+parser.add_argument('--cuda', action='store_true', default=True,
+                    help='enables CUDA training')
+
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                    help='how many batches to wait before logging training status')
+args = parser.parse_args()
+
+print(args)
 numpy.random.seed(1337)  # for reproducibility
 
-import theano
-
-print("Running on: " + theano.config.device)
+cuda.device(0)
+print("Running on: " + tnet.device)
 
 
 def get_iterator(data):
@@ -68,6 +88,8 @@ model = nn.Sequential() \
     #.add(nn.SoftMax())
 
 print(model)
+
+
 def on_start_poch_handler(args):
     train_dataset.resample()
     model.training()

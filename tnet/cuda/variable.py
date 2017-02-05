@@ -16,42 +16,26 @@
 from __future__ import absolute_import
 import copy
 import numpy as np
-
+import math
 
 import theano
-import theano.tensor.basic
-from theano.tensor.basic import TensorType, _tensor_py_operators
-from theano.compile import SharedVariable
-from theano.sandbox.cuda.type import CudaNdarrayType
-from theano.compile import shared_constructor
-#from tnet.core.cuda import SharedVariable as CudaVariable
-try:
-    # We must do those import to be able to create the full doc when nvcc
-    # is not available
 
-    from theano.sandbox.cuda.basic_ops import HostFromGpu, GpuFromHost
-except ImportError:
-    pass
+from theano.tensor.basic import _tensor_py_operators
+from theano.compile import shared_constructor
+from theano.sandbox.cuda.type import CudaNdarrayType
+from tnet.core.var import _var
+#from tnet.core.variable import SharedVariable as TensorVariable
+
+
 T  = theano.tensor
 func = theano.function
 to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
-from tnet.core.var import _var
-
-"""
-Provide a simple user friendly API to Theano-managed memory.
-
-"""
 
 
-class Variable(_var, _tensor_py_operators, SharedVariable):
-
-    # default_update
-    # If this member is present, its value will be used as the "update" for
-    # this Variable, unless another update value has been passed to "function",
-    # or the "no_default_updates" list passed to "function" contains it.
+class Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
 
     def __init__(self, value, name=None, type=None):
 
@@ -65,19 +49,15 @@ class Variable(_var, _tensor_py_operators, SharedVariable):
                 raise TypeError()
 
             if type is None:
-                type = Variable.get_type(value)
+                broadcastable = (False,) * len(value.shape)
+            type = CudaNdarrayType(broadcastable=broadcastable)
             super(Variable, self).__init__(name, type, value, strict=False,
                              allow_downcast=True, container=None)
 
-
-
-    @staticmethod
-    def get_type(value):
-        assert isinstance(value, np.ndarray), "Expected numpy.ndarray value got %s" % value
-        broadcastable = (False,) * len(value.shape)
-        type = TensorType(value.dtype, broadcastable=broadcastable)
-        return type
-
+    def clone(self):
+        cp = self.__class__(self)
+        cp.tag = copy.copy(self.tag)
+        return cp
 
 class Parameter(Variable):
     """docstring for Parameter."""

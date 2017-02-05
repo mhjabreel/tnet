@@ -25,6 +25,7 @@ from tnet.nn import Module, InputInfo
 
 __all__ = [
     "Dropout",
+    "SpatialDropout"
 ]
 
 T  = theano.tensor
@@ -35,8 +36,9 @@ config = theano.config
 
 class Dropout(Module):
     """docstring for Dropout."""
-    def __init__(self, p):
+    def __init__(self, p, scale=True):
         self._p = p
+        self._scale = scale
         super(Dropout, self).__init__()
 
 
@@ -47,16 +49,70 @@ class Dropout(Module):
 
         inp = super(Dropout, self)._update_output(inp)
 
-        if not self.is_in_training:
+        if not self.is_in_training or self._p == 0:
             return inp
 
 
         seed = np.random.randint(1, 10e6)
         rng = RandomStreams(seed=seed)
+        retain = 1. - self._p
+        mask = rng.binomial(inp.shape, p=retain, dtype=inp.dtype)
+        y = inp * mask
+        if self._scale:
+            y /= retain
+        return y
 
-        mask = rng.binomial(n=1, p=1 - self._p, size=inp.shape)
-        y = inp * T.cast(mask, config.floatX)
+    def __repr__(self):
 
+        return "{}({})".format(self.__class__.__name__, self._p)
+
+class SpatialDropout(Module):
+
+    """
+    This version performs the same function as nn.Dropout, however it assumes the 2 right-most dimensions of the input are spatial,
+    performs one Bernoulli trial per output feature when training, and extends this dropout value across the entire feature map.
+
+    As described in the paper "Efficient Object Localization Using Convolutional Networks" (http://arxiv.org/abs/1411.4280),
+    if adjacent pixels within feature maps are strongly correlated (as is normally the case in early convolution layers)
+        then iid dropout will not regularize the activations and will otherwise just result in an effective learning rate decrease.
+    In this case, nn.SpatialDropout will help promote independence between feature maps and should be used instead.
+
+    nn.SpatialDropout accepts 3D or 4D inputs. If the input is 3D than a layout of (features x height x width) is assumed and for 4D (batch x features x height x width) is assumed.
+    """
+    def __init__(self, p, scale=True):
+        self._p = p
+        self._scale = scale
+        super(SpatialDropout, self).__init__()
+
+
+    def _declare(self, **kwargs):
+        pass
+
+    def _update_output(self, inp):
+
+        inp = super(SpatialDropout, self)._update_output(inp)
+
+        if not self.is_in_training or self._p == 0:
+            return inp
+
+        input_shape = inp.shape
+        if inp.ndim == 3:
+            noise_shape = (input_shape[0], 1, input_shape[2])
+        elif inp.ndim == 4:
+            noise_shape = (input_shape[0], input_shape[1], 1, 1)
+        else:
+            raise
+
+
+
+        seed = np.random.randint(1, 10e6)
+        rng = RandomStreams(seed=seed)
+        retain = 1. - self._p
+        mask = rng.binomial(noise_shape, p=retain, dtype=inp.dtype)
+        mask = T.patternbroadcast(mask, [dim == 1 for dim in noise_shape])
+        y = inp * mask
+        if self._scale:
+            y /= retain
         return y
 
     def __repr__(self):

@@ -23,6 +23,7 @@ from __future__ import print_function
 
 
 from tnet import nn
+import tnet.cuda as cuda
 from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
 from tnet.optimizers import *
@@ -41,7 +42,8 @@ import timeit
 import numpy
 
 numpy.random.seed(1337)  # for reproducibility
-
+cuda.device(0)
+print("Running on: " + tnet.device)
 
 batch_size = 128
 nb_classes = 10
@@ -83,7 +85,7 @@ model = nn.Sequential() \
     .add(nn.SpatialConvolution(nb_filters, nb_filters, 3, 3)) \
     .add(nn.ReLU()) \
     .add(nn.SpatialMaxPooling(2, 2)) \
-    .add(nn.Dropout(0.25)) \
+    .add(nn.SpatialDropout(0.25)) \
     .add(nn.Flatten()) \
     .add(nn.Linear(nb_filters * 12 * 12, 128)) \
     .add(nn.ReLU()) \
@@ -104,6 +106,10 @@ def eval():
     loss_meter.add(loss)
     acc_meter.add(p_y_given_x, y_test)
 
+    print('Test set: Average loss: {:.4f}, Accuracy:{:.2f} % '.format(loss_meter.value[0], acc_meter.value))
+
+
+    
 criterion = nn.ClassNLLCriterion()
 
 print(model)

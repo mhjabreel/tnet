@@ -14,6 +14,7 @@
 # =============================================================================
 
 from __future__ import absolute_import
+import copy
 
 class _var(object):
     def __repr__(self):
@@ -31,3 +32,33 @@ class _var(object):
     @property
     def data(self):
         return self.get_value()
+
+    def zero(self, borrow=True):
+        """
+        Set the values of a shared variable to 0.
+
+        Parameters
+        ----------
+        borrow : bbol
+            True to modify the value of a shared variable directly by using
+            its previous value. Potentially this can cause problems
+            regarding to the aliased memory.
+
+        Changes done with this function will be visible to all functions using
+        this SharedVariable.
+
+        """
+        if borrow:
+            self.container.value[...] = 0.
+        else:
+            self.container.value = 0. * self.container.value
+
+
+    def clone(self):
+        cp = self.__class__(self)
+        cp.tag = copy.copy(self.tag)
+        return cp
+
+
+    def copy(self, val):
+        self.set_value(val)
