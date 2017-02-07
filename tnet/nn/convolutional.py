@@ -101,17 +101,7 @@ class SpatialConvolution(Module):
             return [self._W, self._b]
         return [self._W]
 
-    @property
-    def parameter_values(self):
-        if self._has_bias:
-            return [self._W_values, self._b_values]
-        return [self._W_values]
 
-    @parameter_values.setter
-    def parameter_values(self, values):
-        self._W_values = values[0]
-        if self._has_bias:
-            self._b_values = values[1]
 
 
 
@@ -186,8 +176,8 @@ class VolumetricConvolution(Module):
 
     The parameters are the following:
 
-    nb_ichannels: The number of expected input channels in the image given into forward().
-    nb_ochannels: The number of output channels the convolution layer will produce.
+    ichannels: The number of expected input channels in the image given into forward().
+    ochannels: The number of output channels the convolution layer will produce.
     kT: The kernel size of the convolution in time
     kW: The kernel width of the convolution
     kH: The kernel height of the convolution
@@ -210,3 +200,69 @@ class VolumetricConvolution(Module):
     def __init__(self, arg):
         super(VolumetricConvolution, self).__init__()
         self.arg = arg
+    def __init__(self, ichannels, ochannels, k_t, k_w, k_h, d_t=1, d_w=1, d_h=1, pad_t=0, pad_w=0, pad_h=0, bias=True):
+
+        if not hasattr(self, '_input_info'):
+            self._input_info = InputInfo(dtype=config.floatX, shape=[n_input_plane, kh , kw])
+
+        self._ichannels = ichannels
+        self._ochannels = ochannels
+        self._k_t = k_t
+        self._k_w = k_w
+        self._k_h = k_h
+        self._d_t = d_t
+        self._d_w = d_w
+        self._d_h = d_h
+        self._pad_t = pad_t
+        self._pad_w = pad_w
+        self._pad_h = pad_h
+        self._has_bias = bias
+
+        super(VolumetricConvolution, self).__init__()
+
+
+    def _declare(self):
+
+        self._filter_shape = (self._ochannels, self._k_h, self._k_w, self._k_t, self._ichannels)
+        self._image_shape = (None, None, None, self._ichannels)
+
+        #stdv = 1. / np.sqrt(self._kw * self._kh * self._n_input_plane)
+        stdv = np.sqrt(6. / (self._n_input_plane + self._n_output_plane))
+        _W_values = np.array(np.random.uniform(low=-stdv,
+                                              high=stdv,
+                                              size=self._filter_shape),
+                                        theano.config.floatX)
+
+        self._W = tnet.Parameter(_W_values)
+
+        if self._has_bias:
+
+
+            _b_values = np.array(np.random.uniform(low=-stdv,
+                                            high=stdv,
+                                            size=self._n_output_plane),
+                                        theano.config.floatX)
+
+            self._b = tnet.Parameter(_b_values)
+
+
+    def _update_output(self, inp):
+
+        inp = super(SpatialConvolution, self)._update_output(inp)
+
+
+        y = T.nnet.conv2d(inp, self._W,
+                          subsample=(self._dh, self._dw),
+                          border_mode=(self._padh, self._padw))
+
+        if self._has_bias:
+            y += self._b.dimshuffle('x', 0, 'x', 'x')
+
+        return y
+
+
+    @property
+    def parameters(self):
+        if self._has_bias:
+            return [self._W, self._b]
+        return [self._W]
