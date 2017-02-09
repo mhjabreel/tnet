@@ -236,13 +236,18 @@ class Narrow(Module):
     """
     Narrow is application of narrow operation in a module.
     The module further supports negative length, dim and offset to handle inputs of unknown size.
+
+    Example:
+    >>> x = tnet.rand(4, 5)
+    >>> m = nn.Narrow(0, 1, 3)
+    >>> o = m.forward(x)
+    >>> print(x)
+    >>> print(o)
     """
     def __init__(self, dimension, offset, length):
         self._dimension = dimension
         self._offset = offset
         self._length = length
-
-        self._indices = range(offset, offset + length)
 
         super(Narrow, self).__init__()
 
@@ -262,7 +267,7 @@ class Narrow(Module):
             out = inp[self._offset:self._offset + self._length].swapaxes(0, self._dimension)
         else:
             out = inp[self._offset:self._offset + self._length]
-        return out#T.take(inp, self._indices, axis=self._dimension)
+        return out
 
 
 class Select(Module):
@@ -443,6 +448,8 @@ class Clamp(_Func):
     def _update_output(self, inp):
         inp = self._check_input(inp)
         return T.clip(inp, self._min_value, self._max_value)
+
+        
 class Normalize(Module):
     """
     Normalizes the input Tensor to have unit L_p norm.
