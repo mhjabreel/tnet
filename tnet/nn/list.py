@@ -314,9 +314,14 @@ class CMulList(Module):
 
     def _update_output(self, inp):
 
+    def _update_output(self, inp):
+
         assert type(inp) == list and len(inp) > 0
         inp = self._check_input(inp)
-        return T.prod(inp, 0)
+        out = inp[0]
+        for i in range(1, len(inp)):
+            out *= inp[i]
+        return out#T.prod(inp, 0)
 
 
 class CDivList(Module):
