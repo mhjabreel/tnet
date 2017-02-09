@@ -257,7 +257,12 @@ class Narrow(Module):
 
     def _update_output(self, inp):
         inp = self._check_input(inp)
-        return T.take(inp, self._indices, axis=self._dimension)
+        if self._dimension != 0:
+            inp = inp.swapaxes(0, self._dimension)
+            out = inp[self._offset:self._offset + self._length].swapaxes(0, self._dimension)
+        else:
+            out = inp[self._offset:self._offset + self._length]
+        return out#T.take(inp, self._indices, axis=self._dimension)
 
 
 class Select(Module):

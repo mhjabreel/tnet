@@ -312,7 +312,6 @@ class CMulList(Module):
     def _compile(self):
         pass
 
-    def _update_output(self, inp):
 
     def _update_output(self, inp):
 
