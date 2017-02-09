@@ -462,9 +462,46 @@ class MM(Module):
     If transA or transB is set, transpose takes place between the second and
         the third dimensions for the corresponding matrix.
     """
-    def __init__(self, transA, transB):
+    def __init__(self, transA=False, transB=False):
+
+        self._transA = transA
+        self._transB = transB
         super(MM, self).__init__()
-        self.arg = arg
+
+    def _compile(self):
+        pass
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        assert len(inp) == 2, 'input must be a pair of minibatch matrices'
+        inp = self._check_input(inp)
+        a, b = inp
+        assert a.ndim == 2 or a.ndim == 3, 'input tensors must be 2D or 3D'
+        if a.ndim == 2:
+            assert b.ndim == 2, 'second input tensor must be 2D'
+            if self._transA:
+                a = a.T
+            if self._transB:
+                b = b.T
+            assert T.eq(a.shape[0], b.shape[1]), 'matrix sizes do not match'
+
+            return T.dot(a, b)
+
+        else:
+            assert b.ndim == 3, 'second input tensor must be 3D'
+
+            assert T.eq(a.shape[0], b.shape[0]), 'inputs must contain the same number of minibatches'
+
+            if self._transA:
+                a = T.transpose(a, (1, 2))
+
+            if self._transB:
+                b = T.transpose(b, (1, 2))
+
+            return T.batched_dot(a, b)
+
 
 class BatchNormalization(Module):
     """
