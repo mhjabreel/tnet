@@ -24,6 +24,7 @@ from theano.tensor.basic import _tensor_py_operators
 from theano.compile import shared_constructor
 from theano.sandbox.cuda.type import CudaNdarrayType
 from tnet.core.var import _var
+from theano.compile import SharedVariable
 #from tnet.core.variable import SharedVariable as TensorVariable
 
 
@@ -35,7 +36,7 @@ config = theano.config
 
 
 
-class Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
+class Variable(theano.sandbox.cuda.var.CudaNdarraySharedVariable, _var):
 
     def __init__(self, value, name=None, type=None):
 
@@ -54,10 +55,7 @@ class Variable(_var, theano.sandbox.cuda.var.CudaNdarraySharedVariable):
             super(Variable, self).__init__(name, type, value, strict=False,
                              allow_downcast=True, container=None)
 
-    def clone(self):
-        cp = self.__class__(self)
-        cp.tag = copy.copy(self.tag)
-        return cp
+
 
 class Parameter(Variable):
     """docstring for Parameter."""

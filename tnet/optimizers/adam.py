@@ -88,8 +88,8 @@ class AdamOptimizer(Optimizer):
 
         for p in params:
             value = p.get_value(borrow=True)
-            m_prev = p.zero_like()
-            v_prev = p.zero_like()
+            m_prev = p.grad.zero_like()
+            v_prev = p.grad.zero_like()
 
             m_t = self.beta_1 * m_prev + (1.  -self.beta_1) * p.grad
             v_t = self.beta_2 * v_prev + (1. - self.beta_2) * p.grad ** 2

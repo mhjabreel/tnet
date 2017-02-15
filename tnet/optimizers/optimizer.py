@@ -209,16 +209,19 @@ class MinibatchTrainer(Trainer):
 
     def _get_delegators(self):
         if not self._network.input_info is None:
+
             inf = self._network.input_info
+
             try:
                 _ = len(inf) # model has multiple inputs ?
                 x = []
                 k = 0
+                print(inf)
                 for i in inf:
                     #ndim = len(i.shape)
                     #broadcast = (False,) * ndim
                     xi = tnet.Delegator(i.dtype, shape=[None,] + i.shape, name='train_input_%d' % k, strict=True)
-                    x.append(xi)  # data, presented as rasterized imagesT.TensorType(i.dtype, broadcast)('x_%d' % k)
+                    x.append(xi)  # T.TensorType(i.dtype, broadcast)('x_%d' % k)
                     k += 1
             except:
                 try:

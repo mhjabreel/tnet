@@ -68,7 +68,7 @@ class Linear(Module):
                                               size=(nin, nout)),
                             theano.config.floatX)
 
-        self._W = tnet.Parameter(W_values)#theano.shared(self._W_values, borrow=True)
+        self._W = tnet.Parameter(W_values)
         self._params.append(self._W)
 
         if self._has_bias:
@@ -76,9 +76,9 @@ class Linear(Module):
             _b_values = np.array(np.random.uniform(low=-stdv,
                                                   high=stdv,
                                                   size=( nout)),
-                                theano.config.floatX)#np.array(np.zeros(nout), theano.config.floatX)
+                                theano.config.floatX)
 
-            self._b = tnet.Parameter(_b_values)#, borrow=True)
+            self._b = tnet.Parameter(_b_values)
             self._params.append(self._b)
 
 

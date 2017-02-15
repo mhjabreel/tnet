@@ -88,11 +88,11 @@ class AdamxOptimizer(Optimizer):
 
         for p in params:
             value = p.get_value(borrow=True)
-            m_prev = p.zero_like()
-            u_prev = p.zero_like()
+            m_prev = p.grad.zero_like()
+            u_prev = p.grad.zero_like()
 
             m_t = self.beta_1 * m_prev + (1.  -self.beta_1) * p.grad
-            u_t = T.maximum(self.beta_2 * u_prev, T.abs(p.grad))
+            u_t = T.maximum(self.beta_2 * u_prev, T.abs_(p.grad))
 
             d_p = a_t * m_t / (u_t + self.epsilon)
 

@@ -29,8 +29,12 @@ config = theano.config
 to_shared = theano.shared
 T = theano.tensor
 
+theano.config.floatX = 'float32'
+theano.config.mode = 'FAST_RUN'
 
 
+def default_dtype():
+    return theano.config.floatX
 
 device = 'cpu'
 """

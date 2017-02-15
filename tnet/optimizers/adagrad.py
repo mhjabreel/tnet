@@ -40,7 +40,7 @@ class AdagradOptimizer(Optimizer):
 
     """
 
-    def __init__(self, learning_rate=0.01, epsilon=1e-06):
+    def __init__(self, learning_rate=1.0, epsilon=1e-06):
         super(AdagradOptimizer, self).__init__()
         self._defaults = {
             "learning_rate": learning_rate,
@@ -73,15 +73,15 @@ class AdagradOptimizer(Optimizer):
         updates = OrderedDict()
 
         for p in params:
+            value = p.get_value(borrow=True)
+            a = p.grad.zero_like() #tnet.Variable(np.zeros(value.shape, dtype=value.dtype))
 
-            #define the accumulator
-            a = p.zero_like()
             # update accumulator
             new_a = a + p.grad ** 2
             updates[a] = new_a
 
             # update params
-            new_p = p - lr * p.grad / (T.sqrt(new_a) + self.epsilon)
+            new_p = p - (lr * p.grad / (T.sqrt(new_a) + self.epsilon))
             updates[p] = new_p
 
 

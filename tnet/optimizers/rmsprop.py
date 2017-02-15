@@ -75,7 +75,7 @@ class RMSpropOptimizer(Optimizer):
         updates = OrderedDict()
         for p in params:
 
-            a = p.zero_like()
+            a = p.grad.zero_like()
             # update accumulator
             new_a = self.rho * a + (1. - self.rho) * T.square(p.grad)
             updates[a] = new_a

@@ -45,8 +45,14 @@ Provide a simple user friendly API to Theano-managed memory.
 
 """
 
+@staticmethod
+def get_tensor_type(value):
+    assert isinstance(value, np.ndarray), "Expected numpy.ndarray value got %s" % value
+    broadcastable = (False,) * len(value.shape)
+    type = TensorType(value.dtype, broadcastable=broadcastable)
+    return type
 
-class Variable(_var, _tensor_py_operators, SharedVariable):
+class Variable(_var, SharedVariable):
 
     # default_update
     # If this member is present, its value will be used as the "update" for
@@ -70,13 +76,19 @@ class Variable(_var, _tensor_py_operators, SharedVariable):
                              allow_downcast=True, container=None)
 
 
+    def __getitem__(self, *args):
+        # Defined to explicitly use the implementation from `_operators`, since
+        # the definition in `SharedVariable` is only meant to raise an error.
+        return _var.__getitem__(self, *args)
 
-    @staticmethod
-    def get_type(value):
-        assert isinstance(value, np.ndarray), "Expected numpy.ndarray value got %s" % value
-        broadcastable = (False,) * len(value.shape)
-        type = TensorType(value.dtype, broadcastable=broadcastable)
-        return type
+    def __getattr__(self, name):
+        # Defined to explicitly use the implementation from `_operators`, since
+        # the definition in `SharedVariable` is only meant to raise an error.
+        return _var.__getattr__(self, name)
+
+
+
+Variable.get_type = get_tensor_type
 
 
 class Parameter(Variable):
@@ -84,5 +96,5 @@ class Parameter(Variable):
     def __init__(self, value, name=None, type=None):
         super(Parameter, self).__init__(value, name, type)
         gname = name + "_grad" if not name is None else None
-        self.grad = Variable(np.array(self.container.value), gname)
-        self.grad.zero()
+        self.grad = super(Parameter, self).zero_like(gname)
+        

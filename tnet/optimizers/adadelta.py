@@ -75,8 +75,8 @@ class AdadeltaOptimizer(Optimizer):
         for p in params:
 
             #define accumulator and delta_accumulator
-            a = p.zero_like()
-            d_a = p.zero_like()
+            a = p.grad.zero_like()
+            d_a = p.grad.zero_like()
 
             # update accumulator
             new_a = self.rho * a + (1 - self.rho) * (p.grad ** 2)

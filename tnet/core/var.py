@@ -14,9 +14,12 @@
 # =============================================================================
 
 from __future__ import absolute_import
+from theano.tensor.basic import TensorType, _tensor_py_operators
+import numpy
 import copy
 
-class _var(object):
+class _var(_tensor_py_operators):
+
     def __repr__(self):
         value = self.container.value
         t = str(value.dtype)
@@ -28,6 +31,30 @@ class _var(object):
     def __str__(self):
 
         return self.__repr__()
+
+    def get_value(self, borrow=False, return_internal_type=False):
+        """
+        Return the value of this SharedVariable's internal array.
+        """
+        if return_internal_type or not self.get_value_return_ndarray:
+            # return a cuda_ndarray
+            if borrow:
+                return self.container.value
+            else:
+                return copy.deepcopy(self.container.value)
+        else:  # return an ndarray
+            return numpy.asarray(self.container.value)
+
+    def set_value(self, value, borrow=False):
+        """
+        Assign `value` to the GPU-allocated array.
+        """
+        if not borrow:
+            # TODO: check for cuda_ndarray type
+            if not isinstance(value, numpy.ndarray):
+                # in case this is a cuda_ndarray, we copy it
+                value = copy.deepcopy(value)
+        self.container.value = value  # this will copy a numpy ndarray
 
     @property
     def data(self):
@@ -58,6 +85,12 @@ class _var(object):
         cp = self.__class__(self)
         cp.tag = copy.copy(self.tag)
         return cp
+
+    def zero_like(self, name=None):
+        v = self.__class__(self.data, name=name)
+        v.zero()
+        return v
+
 
 
     def copy(self, val):

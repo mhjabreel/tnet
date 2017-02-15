@@ -21,6 +21,7 @@ import tnet.cuda as cuda
 cuda.device('gpu')
 print("Running on: " + tnet.device)
 p = tnet.Variable(np.random.randn(5,2).astype('float32'))
+print(p)
 y = p + 2
 f = theano.function([], y)
 print(f.maker.fgraph.toposort())
