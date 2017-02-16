@@ -23,6 +23,7 @@ from __future__ import print_function
 
 
 from tnet import nn
+import tnet.cuda as cuda
 from tnet.dataset import BatchDataset, ShuffleDataset, DatasetIterator
 from tnet.dataset.custom_datasets import mnist
 from tnet.optimizers import *
@@ -42,22 +43,38 @@ import numpy
 
 numpy.random.seed(1337)  # for reproducibility
 
+cuda.device(0)
+print("Running on: " + tnet.device)
 
 
 def get_iterator(data):
     data = BatchDataset(
-        dataset=ShuffleDataset(
-            dataset=data
-        ),
+        dataset=data,
         batch_size=128
     )
     return DatasetIterator(data)
 
-
+train_dataset, [X_test, y_test] = mnist.get_data()
+train_dataset = ShuffleDataset(dataset=train_dataset)
+iterator = get_iterator(train_dataset)
 
 loss_meter  = meter.AverageValueMeter()
 acc_meter  = meter.AccuracyMeter()
 
+
+#get_grad_prams_values
+model = nn.Sequential() \
+    .add(nn.Linear(28 * 28, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 512)) \
+    .add(nn.ReLU()) \
+    .add(nn.Dropout(0.2)) \
+    .add(nn.Linear(512, 10)) #\
+    #.add(nn.SoftMax())
+
+
+print(model)
 def on_sample_handler(args):
 
     print(args.sample["target"][0])
@@ -66,7 +83,8 @@ def on_sample_handler(args):
 
 
 def on_start_poch_handler(args):
-    model.running_mode = 'train'
+    train_dataset.resample()
+    model.training()
     loss_meter.reset()
     acc_meter.reset()
 
@@ -79,52 +97,43 @@ def on_forward_handler(args):
     sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     sys.stderr.flush()
 
-def on_end_epoch_handler(args):
-    print('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
 
 
 
-train_dataset, [X_test, y_test] = mnist.get_data()
 
-iterator = get_iterator(train_dataset)
 
 #iterator.on_sample += on_sample_handler
 
 
-model = nn.Sequential() \
-    .add(nn.Linear(28 * 28, 512)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.2)) \
-    .add(nn.Linear(512, 512)) \
-    .add(nn.ReLU()) \
-    .add(nn.Dropout(0.2)) \
-    .add(nn.Linear(512, 10)) \
-    .add(nn.SoftMax())
+def eval():
+    model.evaluate()
+    acc_meter.reset()
+    loss_meter.reset()
+    p_y_given_x = model.forward(X_test)
+    loss = criterion.forward(p_y_given_x, y_test)
+    loss_meter.add(loss)
+    acc_meter.add(p_y_given_x, y_test)
 
-model.running_mode = 'train'
+    print('Test set: Average loss: {:.4f}, Accuracy:{:.2f} % '.format(loss_meter.value[0], acc_meter.value))
 
-criterion = nn.ClassNLLCriterion()
+def on_end_epoch_handler(args):
+
+    print('epoch: {}; avg. loss: {:2.4f}; A. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+    print("elapsed time: %d s" % (args.end_time - args.start_time))
+    eval()
+
+model.training()
+
+criterion = nn.CrossEntropyCriterion()
 
 optimizer = SGDOptimizer()
-optimizer.on_forward += on_forward_handler
-optimizer.on_start_poch += on_start_poch_handler
-optimizer.on_end_epoch += on_end_epoch_handler
+
+print(optimizer)
+
+trainer = MinibatchTrainer(model, criterion, optimizer)
+trainer.on_forward += on_forward_handler
+trainer.on_start_poch += on_start_poch_handler
+trainer.on_end_epoch += on_end_epoch_handler
 
 
-optimizer.train(model, criterion, iterator, learning_rate=0.1,  maxepoch=20)
-
-model.running_mode = 'eval'
-
-print("Testing")
-
-acc_meter.reset()
-loss_meter.reset()
-
-p_y_given_x = model.forward(X_test)
-loss = criterion.forward(p_y_given_x, y_test)
-loss_meter.add(loss)
-acc_meter.add(p_y_given_x, y_test)
-
-
-
-print('test; avg. loss: {:2.2f}; avg. acc: {:2.2f}'.format(loss_meter.value[0], acc_meter.value))
+trainer.train(iterator, learning_rate=0.1, max_epoch=5)
