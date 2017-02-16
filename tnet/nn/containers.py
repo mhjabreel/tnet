@@ -126,6 +126,8 @@ class Bottle(Container):
         s += tab + "(1): " + str(self._module).replace(line, line + tab)
         s +=  line + "}"
         return s
+
+
 class Sequential(Container):
 
     def __init__(self):
@@ -134,12 +136,12 @@ class Sequential(Container):
 
     def _update_output(self, inp):
 
-        self.input = []
+
         last_output = self._check_input(inp)
-        self.input.append(last_output)
+
         for m in self._modules:
             last_output = m(last_output)
-            self.input.append(last_output)
+
 
         return last_output
 

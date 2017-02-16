@@ -32,29 +32,6 @@ class _var(_tensor_py_operators):
 
         return self.__repr__()
 
-    def get_value(self, borrow=False, return_internal_type=False):
-        """
-        Return the value of this SharedVariable's internal array.
-        """
-        if return_internal_type or not self.get_value_return_ndarray:
-            # return a cuda_ndarray
-            if borrow:
-                return self.container.value
-            else:
-                return copy.deepcopy(self.container.value)
-        else:  # return an ndarray
-            return numpy.asarray(self.container.value)
-
-    def set_value(self, value, borrow=False):
-        """
-        Assign `value` to the GPU-allocated array.
-        """
-        if not borrow:
-            # TODO: check for cuda_ndarray type
-            if not isinstance(value, numpy.ndarray):
-                # in case this is a cuda_ndarray, we copy it
-                value = copy.deepcopy(value)
-        self.container.value = value  # this will copy a numpy ndarray
 
     @property
     def data(self):

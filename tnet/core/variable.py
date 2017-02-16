@@ -76,15 +76,6 @@ class Variable(_var, SharedVariable):
                              allow_downcast=True, container=None)
 
 
-    def __getitem__(self, *args):
-        # Defined to explicitly use the implementation from `_operators`, since
-        # the definition in `SharedVariable` is only meant to raise an error.
-        return _var.__getitem__(self, *args)
-
-    def __getattr__(self, name):
-        # Defined to explicitly use the implementation from `_operators`, since
-        # the definition in `SharedVariable` is only meant to raise an error.
-        return _var.__getattr__(self, name)
 
 
 
@@ -96,5 +87,6 @@ class Parameter(Variable):
     def __init__(self, value, name=None, type=None):
         super(Parameter, self).__init__(value, name, type)
         gname = name + "_grad" if not name is None else None
-        self.grad = super(Parameter, self).zero_like(gname)
+        self.grad = Variable(np.array(self.container.value), gname)
+        self.grad.zero()
         

@@ -23,6 +23,8 @@ import numpy as np
 import theano
 from theano.tensor.sharedvar import TensorSharedVariable
 from theano.sandbox.cuda.var import CudaNdarraySharedVariable
+
+from copy import deepcopy
 import math
 
 __all__ = [
@@ -110,9 +112,6 @@ class Module(object):
 
         input_or_inputs = self._check_input(input_or_inputs)
 
-        assert isinstance(input_or_inputs, (CudaNdarraySharedVariable, TensorSharedVariable, tnet.Variable)) or \
-               isinstance(input_or_inputs, T.TensorConstant) or \
-               isinstance(input_or_inputs, T.TensorVariable)
 
         self.input = input_or_inputs
 
@@ -187,3 +186,9 @@ class Module(object):
 
     def __str__(self):
         return str(self.__repr__())
+
+    def clone(self):
+        return deepcopy(self)
+
+    def share(self):
+        pass

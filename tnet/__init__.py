@@ -70,7 +70,7 @@ def randn(*shape):
     return tnet.Variable(x)
 
 def zeros(*shape):
-    x = np.zero(shape).astype(theano.config.floatX)
+    x = np.zeros(shape).astype(theano.config.floatX)
     return tnet.Variable(x)
 
 

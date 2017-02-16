@@ -23,5 +23,5 @@ from tnet.nn.convolutional import *
 from tnet.nn.pooling import *
 from tnet.nn.lookuptable import *
 from tnet.nn.list import *
-
+from tnet.nn.rnn import *
 from tnet.nn.criteria import *
