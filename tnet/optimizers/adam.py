@@ -47,7 +47,7 @@ class AdamOptimizer(Optimizer):
 
     """
 
-    def __init__(self, learning_rate=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-06):
+    def __init__(self, learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08):
         super(AdamOptimizer, self).__init__()
         self._defaults = {
             "learning_rate": learning_rate,

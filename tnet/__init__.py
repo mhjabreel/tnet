@@ -36,6 +36,8 @@ theano.config.mode = 'FAST_RUN'
 def default_dtype():
     return theano.config.floatX
 
+EPSILON = 1e-7
+
 device = 'cpu'
 """
 def Variable(value, dtype=None, name=None):

@@ -20,6 +20,7 @@ import numpy as np
 import theano
 import math
 
+import tnet
 from tnet.nn import Module, InputInfo
 
 __all__ = [
@@ -56,7 +57,7 @@ class LookupTable(Module):
 
 
     def _compile(self, **kwargs):
-        self.forward(np.random.randint(0, self._n_index, (1)))
+        pass
 
 
     def _declare(self):

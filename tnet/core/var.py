@@ -19,7 +19,7 @@ import numpy
 import copy
 
 class _var(_tensor_py_operators):
-
+    
     def __repr__(self):
         value = self.container.value
         t = str(value.dtype)

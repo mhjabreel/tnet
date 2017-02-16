@@ -214,6 +214,28 @@ class JoinList(Module):
 
         return T.concatenate([inp], dim)
 
+class SelectList(Module):
+    """docstring for JoinList."""
+    def __init__(self, dim, ndim=None):
+        self._dim = dim
+        self._ndim = ndim
+        super(SelectList, self).__init__()
+
+    def _declare(self):
+        pass
+
+    def _compile(self):
+        pass
+
+    def _update_output(self, inp):
+        if self._dim < 1:
+            p = -1
+        else:
+            p = 1
+        dim = self._dim + p if not self._ndim is None else self._dim
+        inp = self._check_input(inp)
+        assert(type(inp) == list)
+        return inp[dim]
 
 class CAddList(Module):
     """

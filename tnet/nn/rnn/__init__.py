@@ -183,6 +183,7 @@ class LSTMCell(RNNCell):
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
 
     def _update_output(self, inp):
+
         inp = self._check_input(inp)
 
         x = inp[0]
@@ -230,6 +231,7 @@ class GRUCell(RNNCell):
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
 
     def _update_output(self, inp):
+
         nhid = self._rnn_size
 
         inp = self._check_input(inp)
@@ -300,7 +302,9 @@ class Recurrent(Container):
     def _update_output(self, inp):
 
         def sequence(m, seq_inp):
+
             ndim = seq_inp.ndim
+
             if ndim == 2:
                 bsz = 1
                 seq_inp = Unsqueeze(1)(seq_inp)
@@ -311,7 +315,7 @@ class Recurrent(Container):
                 raise ValueError("Unexpected number of input dimesnsion expected 2D or 3D, got %dD" % ndim)
 
             m.zero_state(bsz)
-
+            
             def step(*input_and_state):
                 state_t = m(input_and_state)
                 return state_t

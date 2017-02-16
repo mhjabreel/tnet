@@ -22,6 +22,7 @@ import theano.tensor as T
 import numpy as np
 import math
 
+import tnet
 from tnet.nn import Module, LogSoftMax
 
 __all__ = [
@@ -70,6 +71,7 @@ class CrossEntropyCriterion(Criterion):
 
 class BCECriterion(Criterion):
     def _update_output(self, input, target):
-
+        input = T.clip(input, tnet.EPSILON, 1.0 - tnet.EPSILON)
         #loss = T.mul(target, T.log(input)) + T.mul(1 - target, T.log(1 - input))
-        return T.mean(T.nnet.binary_crossentropy(input, target))
+        loss = T.mean(T.nnet.binary_crossentropy(input, target), axis=-1)
+        return loss

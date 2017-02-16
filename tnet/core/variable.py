@@ -89,4 +89,3 @@ class Parameter(Variable):
         gname = name + "_grad" if not name is None else None
         self.grad = Variable(np.array(self.container.value), gname)
         self.grad.zero()
-        

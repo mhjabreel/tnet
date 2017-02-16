@@ -22,6 +22,7 @@ import numpy as np
 import math
 from tnet.base import *
 import theano
+from collections import OrderedDict
 
 T  = theano.tensor
 func = theano.function
@@ -110,6 +111,7 @@ class Trainer(object):
     def _initialization(self):
 
         x_input, y_input = self._get_delegators()
+        inputs = x_input + [y_input] if type(x_input) == list else [x_input, y_input]
 
         p_y_given_x = self._network(x_input)
 
@@ -121,8 +123,8 @@ class Trainer(object):
         g_params = []
 
         for p in self._network.parameters:
-            if hasattr(p, 'grad'):
-            #if isinstance(p, tnet.Parameter):
+            #if hasattr(p, 'grad'):
+            if isinstance(p, tnet.Parameter):
 
                 g = T.grad(cost=cost, wrt=p)
                 params.append(p)
@@ -130,10 +132,12 @@ class Trainer(object):
 
 
 
-        gsup =  [(p.grad, g) for p, g in zip(params, g_params)] # this substitution is used to populate the gradient to layers' model
+        gsup =  OrderedDict()
+        for p, g in zip(params, g_params):
+            gsup[p.grad] = g# [(p.grad, g) for p, g in ] # this substitution is used to populate the gradient to layers' model
 
         self._fwd_bwd_step = theano.function(
-            inputs=[x_input, y_input],
+            inputs= inputs,
             outputs=[p_y_given_x, cost],
             updates=gsup
         )
@@ -157,7 +161,10 @@ class Trainer(object):
 
             for sample in dataset_iterator():
 
-                prob, v_cost = self._fwd_bwd_step(sample["input"], sample["target"])
+                inputs = sample["input"] + [sample["target"]] if \
+                        type(sample["input"]) == list else [sample["input"], sample["target"]]
+
+                prob, v_cost = self._fwd_bwd_step(*inputs)
 
                 self.on_forward.invoke(OnForwardEventArgs(epoch, v_cost, prob, sample["target"]))
 
@@ -186,10 +193,8 @@ class OnlineTrainer(Trainer):
                 x = []
                 k = 0
                 for i in inf:
-                    #ndim = len(i.shape)
-                    #broadcast = (False,) * ndim
                     xi = tnet.Delegator(i.dtype, shape=i.shape, name='train_input_%d' % k, strict=True)
-                    x.append(xi)  # data, presented as rasterized imagesT.TensorType(i.dtype, broadcast)('x_%d' % k)
+                    x.append(xi)
                     k += 1
             except:
                 try:
@@ -199,7 +204,7 @@ class OnlineTrainer(Trainer):
         else:
             x = tnet.Delegator('float32', ndim=1, name='train_input')
 
-        y = tnet.Delegator('int32', ndim=0, name='train_target')#T.iscalar('y')  # labels, presented as 1D vector of [int] labels
+        y = tnet.Delegator('int32', ndim=0, name='train_target') # labels, presented as 1D vector of [int] labels
 
         return x, y
 
@@ -216,12 +221,10 @@ class MinibatchTrainer(Trainer):
                 _ = len(inf) # model has multiple inputs ?
                 x = []
                 k = 0
-                print(inf)
+
                 for i in inf:
-                    #ndim = len(i.shape)
-                    #broadcast = (False,) * ndim
                     xi = tnet.Delegator(i.dtype, shape=[None,] + i.shape, name='train_input_%d' % k, strict=True)
-                    x.append(xi)  # T.TensorType(i.dtype, broadcast)('x_%d' % k)
+                    x.append(xi)
                     k += 1
             except:
                 try:

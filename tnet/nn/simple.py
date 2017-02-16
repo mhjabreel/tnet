@@ -159,9 +159,10 @@ class Transpose(Module):
 class View(Module):
 
     def __init__(self, *dargs):
+
         assert len(dargs) > 0 #and len(*dargs) <= 4
         assert all([type(v) == int for v in dargs])
-        assert min(*dargs) == -1
+        assert min(dargs) == -1
         c = 0
         s = 0
         negidx = None
@@ -174,8 +175,6 @@ class View(Module):
             if c > 1:
                 raise ValueError("only one dimension can be at -1")
         self._new_shape = list(dargs)#[v if v >= 0 else 'x' for v in dargs]
-        self._non_negative_dim = s
-        self._negidx = negidx
         super(View, self).__init__()
 
     def _get_shape(self, inp):
@@ -183,17 +182,13 @@ class View(Module):
         return tuple(shape)
 
     def _compile(self):
-
-        shape = self._new_shape
-        if not self._negidx is None:
-            shape[self._negidx] = 1
-        self.forward(np.random.random(shape).astype(config.floatX))
+        pass
 
     def _declare(self):
         pass
 
     def _update_output(self, inp):
-        inp = super(View, self)._update_output(inp)
+        inp = self._check_input(inp)
         shape = self._get_shape(inp)
         return T.reshape(inp, shape)
 
@@ -303,10 +298,7 @@ class Select(Module):
         super(Select, self).__init__()
 
     def _compile(self):
-        shp = [1] * (self._dimension + 1)
-        shp[self._dimension] = self._index + 1
-        x = np.random.random(shp).astype(config.floatX)
-        self.forward(x)
+        pass
 
     def _declare(self):
         pass
