@@ -49,9 +49,8 @@ class AdamxOptimizer(Optimizer):
 
     def __init__(self, learning_rate=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-8):
         super(AdamxOptimizer, self).__init__()
-        self._defaults = {
+        self._configs = {
             "learning_rate": learning_rate,
-            "iteration": 0
         }
         self.beta_1 = beta_1
         self.beta_2 = beta_2
@@ -102,3 +101,13 @@ class AdamxOptimizer(Optimizer):
 
         updates[step] = t
         return updates
+
+    @property
+    def learning_rate(self):
+        return self._configs["learning_rate"]
+
+
+    @learning_rate.setter
+    def learning_rate(self, lr):
+        assert type(lr) == float
+        self._configs["learning_rate"] = lr

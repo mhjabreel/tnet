@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='tnet',
-    version='0.1.0alpha',
+    version='0.1.2alpha',
     url='https://github.com/mhjabreel/tnet',
     license='Apache 2.0',
     install_requires=['theano'],

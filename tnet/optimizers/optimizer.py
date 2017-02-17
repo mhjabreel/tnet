@@ -28,7 +28,7 @@ __all__ = [
 class Optimizer(object):
 
     def __init__(self):
-        self._defaults = {}
+        self._configs = {}
 
 
     """
@@ -44,10 +44,10 @@ class Optimizer(object):
     """
     def _get_default(self, key):
 
-        if key not in self._defaults:
+        if key not in self._configs:
             raise ValueError("Unknown parameter % s" % str(key))
 
-        return self._defaults[key]
+        return self._configs[key]
 
     """
     An abstract methdo to get the parameters' update function.
@@ -63,17 +63,16 @@ class Optimizer(object):
         updates = self._get_updates(params, place_holders)
         self._update_fn = theano.function(inputs=place_holders, outputs=[], updates=updates)
 
-    def update(self, **config):
+    def update(self):
 
         pnames = [p.name for p in self._get_delegators()]
         inputs = []
 
         for p in pnames:
-            if p in config:
-                v = config[p]
-            else:
-                v = self._get_default(p)
+            v = self._get_default(p)
+
             inputs.append(v)
+
 
         self._update_fn(*inputs)
 

@@ -94,14 +94,14 @@ model = nn.Sequential() \
 print(model)
 
 
-def on_start_poch_handler(args):
+def on_start_poch_handler(sender, args):
     train_dataset.resample()
     model.training()
     loss_meter.reset()
     acc_meter.reset()
 
 
-def on_forward_handler(args):
+def on_forward_handler(sender, args):
 
     loss_meter.add(args.criterion_output)
     acc_meter.add(args.network_output, args.target)
@@ -109,11 +109,15 @@ def on_forward_handler(args):
     sys.stderr.write('epoch: {}; avg. loss: {:2.2f}; avg. acc: {:2.2f}\r'.format(args.epoch, loss_meter.value[0], acc_meter.value))
     sys.stderr.flush()
 
-def on_end_epoch_handler(args):
-
-    print('epoch: {}; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(args.epoch, loss_meter.value[0], acc_meter.value))
+lr = 0.01
+def on_end_epoch_handler(sender, args):
+    global lr
+    print('epoch: {}; lr: {:2.6f}; avg. loss: {:2.4f}; avg. acc: {:2.4f}'.format(args.epoch, sender.optimizer.learning_rate, loss_meter.value[0], acc_meter.value))
     print("elapsed time: %d s" % (args.end_time - args.start_time))
 
+    #lr = sender.optimizer.learning_rate
+    clr = lr / (1. + 0.001 * args.epoch)
+    sender.optimizer.learning_rate = clr
 
     model.evaluate()
 
@@ -140,7 +144,7 @@ model.training()
 
 criterion = nn.CrossEntropyCriterion()
 
-optimizer = RMSpropOptimizer()
+optimizer = SGDOptimizer(momentum=0.9, nesterov=True)
 
 trainer = MinibatchTrainer(model, criterion, optimizer)
 trainer.on_forward += on_forward_handler

@@ -34,7 +34,7 @@ class SGDOptimizer(Optimizer):
 
     def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False):
         super(SGDOptimizer, self).__init__()
-        self._defaults = {
+        self._configs = {
             "learning_rate": learning_rate,
         }
         self._momentum = momentum
@@ -74,3 +74,22 @@ class SGDOptimizer(Optimizer):
         updates[step] = step + 1
 
         return updates
+
+
+    @property
+    def learning_rate(self):
+        return self._configs["learning_rate"]
+
+    @learning_rate.setter
+    def learning_rate(self, lr):
+        assert type(lr) == float
+        self._configs["learning_rate"] = lr
+
+
+    @property
+    def momentum(self):
+        return self._momentum
+
+    @property
+    def nesterov(self):
+        return self._nesterov

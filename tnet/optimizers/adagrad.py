@@ -42,7 +42,7 @@ class AdagradOptimizer(Optimizer):
 
     def __init__(self, learning_rate=1.0, epsilon=1e-06):
         super(AdagradOptimizer, self).__init__()
-        self._defaults = {
+        self._configs = {
             "learning_rate": learning_rate,
         }
 
@@ -87,3 +87,14 @@ class AdagradOptimizer(Optimizer):
 
         updates[step] = step + 1
         return updates
+
+
+    @property
+    def learning_rate(self):
+        return self._configs["learning_rate"]
+
+
+    @learning_rate.setter
+    def learning_rate(self, lr):
+        assert type(lr) == float
+        self._configs["learning_rate"] = lr

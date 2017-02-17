@@ -275,7 +275,7 @@ class DatasetIterator(object):
             idx += 1
             if self._filter(sample):
 
-                self.on_sample.invoke(OnSampleEventArgs(sample))
+                self.on_sample.invoke(self, OnSampleEventArgs(sample))
 
                 yield sample
 

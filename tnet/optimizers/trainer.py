@@ -99,7 +99,7 @@ class Trainer(object):
         if "max_epoch" in training_config:
             max_epoch = training_config["max_epoch"]
 
-        self.on_start.invoke(EventArgs())
+        self.on_start.invoke(self, EventArgs())
 
         epoch = 0
         while epoch < max_epoch:
@@ -119,13 +119,21 @@ class Trainer(object):
 
                 self.on_backward.invoke(self, TrainingEventArgs(epoch))
 
-                self._optimizer.update(**training_config)
+                self._optimizer.update()
 
                 self.on_update.invoke(self, TrainingEventArgs(epoch))
 
             self.on_end_epoch.invoke(self, OnEndEpochEventArgs(epoch, start_time, time.time()))
 
         self.on_end.invoke(self, EventArgs())
+
+    @property
+    def optimizer(self):
+        return self._optimizer
+
+    @property
+    def model(self):
+        return self._network
 
 
 class OnlineTrainer(Trainer):
@@ -186,6 +194,8 @@ class MinibatchTrainer(Trainer):
         y = tnet.Delegator('int32', ndim=1, name='train_target')#T.iscalar('y')  # labels, presented as 1D vector of [int] labels
 
         return x, y
+
+
 
 class TrainingEventArgs(EventArgs):
 
