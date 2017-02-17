@@ -281,7 +281,7 @@ class Recurrent(Container):
                  rnn_cell,
                  nb_layers=1,
                  return_sequences=True):
-
+        super(Recurrent, self).__init__()
         self._rnn_cell = rnn_cell
         self._nb_layers = nb_layers
         self._return_sequences = return_sequences
@@ -386,3 +386,5 @@ class GRU(Recurrent):
     def __init__(self, input_dim, rnn_size, nb_layers=1, return_sequences=True):
         cell = GRUCell(input_dim, rnn_size)
         super(GRU, self).__init__(cell, nb_layers, return_sequences)
+
+
