@@ -63,12 +63,12 @@ class Linear(Module):
 
         stdv = 1. / np.sqrt(nin) #np.sqrt(6. / (nin + nout))#
 
-        W_values = np.array(np.random.uniform(low=-stdv,
+        w_values = np.array(np.random.uniform(low=-stdv,
                                               high=stdv,
                                               size=(nin, nout)),
                             theano.config.floatX)
 
-        self._W = tnet.Parameter(W_values)
+        self._W = tnet.Parameter(w_values)
         self._params.append(self._W)
 
         if self._has_bias:
@@ -81,8 +81,6 @@ class Linear(Module):
             self._b = tnet.Parameter(_b_values)
             self._params.append(self._b)
 
-
-
     def _update_output(self, inp):
 
         inp = super(Linear, self)._update_output(inp)
@@ -94,15 +92,6 @@ class Linear(Module):
 
         else:
             raise Exception("input must be vector or matrix")
-
-
-
-
-
-
-    def get_grad_prams_values(self):
-        return self._W.grad
-
 
     def __repr__(self):
 

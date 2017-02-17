@@ -75,10 +75,6 @@ class Variable(_var, SharedVariable):
             super(Variable, self).__init__(name, type, value, strict=False,
                              allow_downcast=True, container=None)
 
-
-
-
-
 Variable.get_type = get_tensor_type
 
 

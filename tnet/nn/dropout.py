@@ -34,13 +34,13 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
+
 class Dropout(Module):
     """docstring for Dropout."""
     def __init__(self, p, scale=True):
         self._p = p
         self._scale = scale
         super(Dropout, self).__init__()
-
 
     def _declare(self, **kwargs):
         pass
@@ -51,7 +51,6 @@ class Dropout(Module):
 
         if not self.is_in_training or self._p == 0:
             return inp
-
 
         seed = np.random.randint(1, 10e6)
         rng = RandomStreams(seed=seed)
@@ -65,6 +64,7 @@ class Dropout(Module):
     def __repr__(self):
 
         return "{}({})".format(self.__class__.__name__, self._p)
+
 
 class SpatialDropout(Module):
 
@@ -103,8 +103,6 @@ class SpatialDropout(Module):
         else:
             raise
 
-
-
         seed = np.random.randint(1, 10e6)
         rng = RandomStreams(seed=seed)
         retain = 1. - self._p
@@ -118,3 +116,7 @@ class SpatialDropout(Module):
     def __repr__(self):
 
         return "{}({})".format(self.__class__.__name__, self._p)
+
+
+#TODO
+#VolumetricDropout

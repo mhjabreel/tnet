@@ -46,13 +46,8 @@ class _Activation(Module):
         self._func = func
         super(_Activation, self).__init__()
 
-
     def _declare(self):
         pass
-
-    #def _compile(self):
-        #mock_input = np.array(np.random.rand((1)),  config.floatX)
-        #self.forward(mock_input)
 
     def _update_output(self, inp):
         inp = super(_Activation, self)._update_output(inp)
@@ -73,17 +68,21 @@ class Sigmoid(_Activation):
     def __init__(self):
         super(Sigmoid, self).__init__(T.nnet.sigmoid)
 
+
 class HardSigmoid(_Activation):
     def __init__(self):
         super(HardSigmoid, self).__init__(T.nnet.hard_sigmoid)
+
 
 class SoftMax(_Activation):
     def __init__(self):
         super(SoftMax, self).__init__(T.nnet.softmax)
 
+
 class LogSoftMax(_Activation):
     def __init__(self):
         super(LogSoftMax, self).__init__(T.nnet.logsoftmax)
+
 
 class SoftPlus(_Activation):
     def __init__(self):
@@ -96,6 +95,7 @@ class Threshold(_Activation):
         self.__threshold = th
         self.__val = v
         super(Threshold, self).__init__(lambda x : T.switch(T.lt(x, th), v, x) )
+
 
 class ReLU(Threshold):
 

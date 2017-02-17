@@ -63,39 +63,23 @@ class Module(object):
         self._running_mode = RunningMode.EVAL
         self._params = []
         self._declare(**kwargs)
-        self._compile(**kwargs)
 
-
-    def _compile(self, **kwargs):
-        if hasattr(self, '_input_info') and not self._input_info is None:
-            input_shape = self._input_info.shape
-            input_shape = [s if not s is None else 1 for s in input_shape]
-
-            mock_input = np.array(np.random.random([1] + input_shape), self._input_info.dtype)
-
-            self.forward(mock_input)
-        else:
-            self.forward(np.random.rand(1).astype(theano.config.floatX) + 1.5)
-
-
-
+    #@staticmethod
     def _check_input(self, input_or_inputs):
 
         type_of_input = type(input_or_inputs)
-
 
         if type_of_input == list or type_of_input == tuple:
 
             type_of_inputs = [type(inp) for inp in input_or_inputs]
 
-
-            all_types_are_coorect = all([ t == np.ndarray or \
+            all_types_are_correct = all([ t == np.ndarray or \
                                          t == T.TensorVariable or \
                                          t == tnet.Variable or \
                                          t == T.TensorConstant \
                                             for t in type_of_inputs])
 
-            if not all_types_are_coorect:
+            if not all_types_are_correct:
                 raise  ValueError("Wrong types are passed")
 
             input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else \
@@ -112,34 +96,21 @@ class Module(object):
     def _update_output(self, input_or_inputs):
 
         input_or_inputs = self._check_input(input_or_inputs)
-
-
         self.input = input_or_inputs
-
         return input_or_inputs
 
-
-
-
     def __call__(self, input_or_inputs):
-
         return self._update_output(input_or_inputs)
 
-
     def forward(self, input_or_inputs):
-        out = self._update_output(input_or_inputs)
 
+        out = self._update_output(input_or_inputs)
         if type(out) == list:
             self._output = [s.eval() for s in out]
         else:
             self._output = out.eval()
 
         return self._output
-
-
-
-
-
 
     def _set_running_mode(self, mode):
         self._running_mode = mode
@@ -159,13 +130,6 @@ class Module(object):
     def parameters(self):
         return self._params
 
-    @property
-    def parameter_values(self):
-        return []
-
-    @parameter_values.setter
-    def parameter_values(self, values):
-        pass
 
     @property
     def running_mode(self):

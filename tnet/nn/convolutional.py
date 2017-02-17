@@ -54,7 +54,6 @@ class SpatialConvolution(Module):
 
         super(SpatialConvolution, self).__init__()
 
-
     def _declare(self):
 
         self._filter_shape = (self._n_output_plane, self._n_input_plane, self._kh, self._kw)
@@ -79,11 +78,9 @@ class SpatialConvolution(Module):
 
             self._b = tnet.Parameter(_b_values)
 
-
     def _update_output(self, inp):
 
         inp = super(SpatialConvolution, self)._update_output(inp)
-
 
         y = T.nnet.conv2d(inp, self._W,
                           subsample=(self._dh, self._dw),
@@ -94,16 +91,11 @@ class SpatialConvolution(Module):
 
         return y
 
-
     @property
     def parameters(self):
         if self._has_bias:
             return [self._W, self._b]
         return [self._W]
-
-
-
-
 
 
 class TemporalConvolution(SpatialConvolution):
@@ -149,13 +141,11 @@ class TemporalConvolution(SpatialConvolution):
         self._dw = dw
         self._has_bias = bias
 
-
         super(TemporalConvolution, self).__init__(1, output_frame_size, input_frame_size, kw, 1, dw, bias=bias)
         self._image_shape = (None, self._n_input_plane, None, input_frame_size)
 
 
     def _update_output(self, inp):
-
 
         inp = self._check_input(inp)
         assert isinstance(inp, T.TensorConstant) or isinstance(inp, T.TensorVariable)
@@ -168,7 +158,7 @@ class TemporalConvolution(SpatialConvolution):
         out = out.dimshuffle(0, 2, 1)
         return out
 
-
+#TODO
 class VolumetricConvolution(Module):
     """
     Applies a 3D convolution over an input image composed of several input planes.

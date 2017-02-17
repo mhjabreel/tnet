@@ -32,15 +32,12 @@ __all__ = [
     "BCECriterion"
 ]
 
+
 class Criterion(object):
 
     def __init__(self, **kwargs):
         pass
 
-
-    def _compile(self):
-        mock_input = np.array(np.random.rand((1)) + 1,  config.floatX)
-        self.forward(mock_input, mock_input)
 
     def __call__(self, input, target):
         return self._update_output(input, target)
@@ -63,15 +60,16 @@ class CrossEntropyCriterion(Criterion):
     def __init__(self, **kwargs):
         self.ls = LogSoftMax()
 
-
     def _update_output(self, input, target):
         out = self.ls(input)
         return -T.mean(out[T.arange(target.shape[0]), target])
 
 
 class BCECriterion(Criterion):
+
     def _update_output(self, input, target):
+
         input = T.clip(input, tnet.EPSILON, 1.0 - tnet.EPSILON)
-        #loss = T.mul(target, T.log(input)) + T.mul(1 - target, T.log(1 - input))
         loss = T.mean(T.nnet.binary_crossentropy(input, target), axis=-1)
+
         return loss

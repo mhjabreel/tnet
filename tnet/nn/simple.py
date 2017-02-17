@@ -29,35 +29,32 @@ to_shared = theano.shared
 config = theano.config
 
 
-class _GobalPooling(Module):
+class _GlobalPooling(Module):
     def __init__(self, pool_fn, dimension, n_input_dim=None):
-
 
         self._dimension = dimension
         self._n_input_dim = n_input_dim
         self._pool_fn = pool_fn
-        super(_GobalPooling, self).__init__()
-
+        super(_GlobalPooling, self).__init__()
 
     def _get_positive_index(self, inp):
         d = self._dimension
-        if  d < 0:
+        if d < 0:
             d = inp.ndim + d + 1
-        elif not self._n_input_dim is None and inp.ndim == (self._n_input_dim + 1):
-            d = d + 1
+        elif self._n_input_dim is not None and inp.ndim == (self._n_input_dim + 1):
+            d += 1
         return d
 
     def _declare(self):
         pass
 
-
     def _update_output(self, inp):
-        inp = super(_GobalPooling, self)._update_output(inp)
+        inp = super(_GlobalPooling, self)._update_output(inp)
         d = self._get_positive_index(inp)
         return self._pool_fn(inp, axis=d)
 
 
-class Max(_GobalPooling):
+class Max(_GlobalPooling):
 
     """
     Applies a max operation over dimension dimension.
@@ -73,7 +70,7 @@ class Max(_GobalPooling):
         super(Max, self).__init__(T.max, dimension, n_input_dim)
 
 
-class Min(_GobalPooling):
+class Min(_GlobalPooling):
 
     """
     Applies a min operation over dimension dimension.
@@ -88,7 +85,8 @@ class Min(_GobalPooling):
 
         super(Min, self).__init__(T.min, dimension, n_input_dim)
 
-class Mean(_GobalPooling):
+
+class Mean(_GlobalPooling):
 
     """
     Applies a mean operation over dimension dimension.
@@ -104,7 +102,7 @@ class Mean(_GobalPooling):
         super(Mean, self).__init__(T.mean, dimension, n_input_dim)
 
 
-class Sum(_GobalPooling):
+class Sum(_GlobalPooling):
 
     """
     Applies a max operation over dimension dimension.
@@ -118,6 +116,7 @@ class Sum(_GobalPooling):
     def __init__(self, dimension, n_input_dim=None):
 
         super(Sum, self).__init__(T.sum, dimension, n_input_dim)
+
 
 class Flatten(Module):
 
@@ -147,14 +146,13 @@ class Transpose(Module):
         self._view_pattern = dargs#[v if v >= 0 else 'x' for v in dargs]
         super(Transpose, self).__init__()
 
-    def _compile(self):
-        pass
     def _declare(self):
         pass
 
     def _update_output(self, inp):
         inp = super(Transpose, self)._update_output(inp)
         return inp.dimshuffle(self._view_pattern)
+
 
 class View(Module):
 
@@ -165,24 +163,21 @@ class View(Module):
         assert min(dargs) == -1
         c = 0
         s = 0
-        negidx = None
+
         for i, v in enumerate(dargs):
             if v == -1:
                 c += 1
-                negidx = i
             else:
                 s += v
             if c > 1:
                 raise ValueError("only one dimension can be at -1")
-        self._new_shape = list(dargs)#[v if v >= 0 else 'x' for v in dargs]
+
+        self._new_shape = list(dargs)
         super(View, self).__init__()
 
     def _get_shape(self, inp):
         shape = self._new_shape
         return tuple(shape)
-
-    def _compile(self):
-        pass
 
     def _declare(self):
         pass
@@ -207,14 +202,6 @@ class Replicate(Module):
         self._ndim = ndim
 
         super(Replicate, self).__init__()
-
-    def _compile(self):
-        shp = [1] * (self._dim + 1)
-        if self._ndim is not None:
-            shp.append(1)
-        x = np.random.random(shp).astype(config.floatX)
-
-        self.forward(x)
 
     def _declare(self):
         pass
@@ -243,14 +230,7 @@ class Narrow(Module):
         self._dimension = dimension
         self._offset = offset
         self._length = length
-
         super(Narrow, self).__init__()
-
-    def _compile(self):
-        shp = [1] * (self._dimension + 1)
-        shp[self._dimension] = self._offset + self._length
-        x = np.random.random(shp).astype(config.floatX)
-        self.forward(x)
 
     def _declare(self):
         pass
@@ -297,15 +277,13 @@ class Select(Module):
         self._index = index
         super(Select, self).__init__()
 
-    def _compile(self):
-        pass
-
     def _declare(self):
         pass
 
     def _update_output(self, inp):
         inp = self._check_input(inp)
         return T.take(inp, self._index, axis=self._dimension)
+
 
 class Squeeze(Module):
     """
@@ -316,15 +294,6 @@ class Squeeze(Module):
         self._ndim = ndim
         super(Squeeze, self).__init__()
 
-
-    def _compile(self):
-        dim = self._dim + 1 if not self._ndim is None else self._dim
-        shp = [2] * (dim + 2)
-        shp[dim] = 1
-
-        x = np.random.random(shp).astype(config.floatX)
-        self.forward(x)
-
     def _declare(self):
         pass
 
@@ -334,6 +303,7 @@ class Squeeze(Module):
         shape = list(inp.shape)
         shape.pop(dim)
         return T.reshape(inp, tuple(shape))
+
 
 class Unsqueeze(Module):
     """
@@ -354,14 +324,6 @@ class Unsqueeze(Module):
         self._ndim = ndim
         super(Unsqueeze, self).__init__()
 
-    def _compile(self):
-        dim = self._dim + 1 if not self._ndim is None else self._dim
-        shp = [2] * (dim + 2)
-        shp[dim] = 1
-
-        x = np.random.random(shp).astype(config.floatX)
-        self.forward(x)
-
     def _declare(self):
         pass
 
@@ -373,13 +335,11 @@ class Unsqueeze(Module):
         dims.insert(dim, 'x')
         return inp.dimshuffle(dims)
 
+
 class _Func(Module):
     def __init__(self, func):
         self._func = func
         super(_Func, self).__init__()
-
-    def _compile(self):
-        pass
 
     def _declare(self):
         pass
@@ -387,6 +347,7 @@ class _Func(Module):
     def _update_output(self, inp):
         inp = self._check_input(inp)
         return self._func(inp)
+
 
 class Exp(_Func):
     """
@@ -400,6 +361,7 @@ class Log(_Func):
     """Applies the log function element-wise to the input Tensor, thus outputting a Tensor of the same dimension."""
     def __init__(self):
         super(Log, self).__init__(T.log)
+
 
 class Square(_Func):
     """Takes the square of each element."""
@@ -419,7 +381,6 @@ class Power(_Func):
         self._p = p
         super(Power, self).__init__(None)
 
-
     def _update_output(self, inp):
         inp = self._check_input(inp)
         return T.pow(inp, self._p)
@@ -436,12 +397,12 @@ class Clamp(_Func):
         self._max_value = max_value
         super(Clamp, self).__init__(None)
 
-
     def _update_output(self, inp):
         inp = self._check_input(inp)
         return T.clip(inp, self._min_value, self._max_value)
 
 
+#TODO
 class Normalize(Module):
     """
     Normalizes the input Tensor to have unit L_p norm.
@@ -451,7 +412,8 @@ class Normalize(Module):
     """
     def __init__(self, p, eps):
         super(Normalize, self).__init__()
-        self.arg = arg
+        pass
+
 
 class MM(Module):
     """
@@ -471,9 +433,6 @@ class MM(Module):
         self._transA = transA
         self._transB = transB
         super(MM, self).__init__()
-
-    def _compile(self):
-        pass
 
     def _declare(self):
         pass
@@ -507,6 +466,7 @@ class MM(Module):
             return T.batched_dot(a, b)
 
 
+#TODO
 class BatchNormalization(Module):
     """
     where N is the dimensionality of input eps is a small value added to the standard-deviation to avoid divide-by-zero.
@@ -530,17 +490,20 @@ class BatchNormalization(Module):
     """
     def __init__(self, arg):
         super(BatchNormalization, self).__init__()
-        self.arg = arg
+        pass
 
+
+#TODO
 class Padding(Module):
     """docstring for Padding."""
-    def __init__(self, arg):
+    def __init__(self):
         super(Padding, self).__init__()
-        self.arg = arg
+        pass
 
 
+#TODO
 class L1Penalty(Module):
     """docstring for L1Penalty."""
-    def __init__(self, arg):
+    def __init__(self):
         super(L1Penalty, self).__init__()
-        self.arg = arg
+

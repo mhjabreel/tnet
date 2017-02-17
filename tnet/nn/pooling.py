@@ -34,7 +34,6 @@ to_shared = theano.shared
 config = theano.config
 
 
-
 class _SpatialPooling(Module):
 
     def __init__(self, pool_mode, kw, kh, dw=None, dh=None, padw=0, padh=0):
@@ -63,10 +62,6 @@ class _SpatialPooling(Module):
 
         super(_SpatialPooling, self).__init__()
 
-    def _declare(self):
-        pass
-
-
     def _update_output(self, inp):
 
         inp = super(_SpatialPooling, self)._update_output(inp)
@@ -86,7 +81,6 @@ class _SpatialPooling(Module):
                           mode)
         return y
 
-
     def ciel(self):
         self._ciel_mode = True
         return self
@@ -96,9 +90,7 @@ class _SpatialPooling(Module):
         return self
 
 
-
 class SpatialMaxPooling(_SpatialPooling):
 
     def __init__(self, kw, kh, dw=None, dh=None, padW=0, padH=0):
-
         super(SpatialMaxPooling, self).__init__('max', kw, kh, dw, dh, padW, padH)

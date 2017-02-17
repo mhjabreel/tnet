@@ -39,6 +39,6 @@ class EventHook(object):
         self.handlers.remove(handler)
         return self
 
-    def invoke(self, event_args):
+    def invoke(self, sender, event_args):
         for handler in self.handlers:
-            handler(event_args)
+            handler(sender, event_args)

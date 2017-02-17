@@ -70,9 +70,6 @@ class RNNCell(Module):
     def _declare(self, **kwargs):
         pass
 
-    def _compile(self, **kwargs):
-        pass
-
     def save_last_state(self, state):
         pass
 

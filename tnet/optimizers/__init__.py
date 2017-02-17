@@ -14,6 +14,7 @@
 # =============================================================================
 
 from __future__ import absolute_import
+from tnet.optimizers.trainer import *
 from tnet.optimizers.optimizer import *
 from tnet.optimizers.sgdoptimizer import *
 from tnet.optimizers.adadelta import *

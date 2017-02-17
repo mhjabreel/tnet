@@ -36,15 +36,11 @@ __all__ = [
     "Concat"
 ]
 
-
 class Container(Module):
 
     def __init__(self):
         self._modules = []
         super(Container, self).__init__()
-
-    def _compile(self):
-        pass
 
     def _declare(self):
         pass
@@ -55,30 +51,6 @@ class Container(Module):
         self._params += module.parameters
         return self
 
-    @property
-    def parameters(self):
-        params = []
-        for m in self._modules:
-            p = m.parameters
-            if not p is None:
-                #params.append(p)
-                params += p
-        return params
-
-    @property
-    def parameter_values(self):
-        param_vals = []
-        for m in self._modules:
-            v = m.parameter_values
-            if not v is None:
-                param_vals += v
-        return param_vals
-
-    @parameter_values.setter
-    def parameter_values(self, values):
-        pass
-
-
     def _set_running_mode(self, mode):
 
         self._running_mode = mode
@@ -86,6 +58,8 @@ class Container(Module):
         for m in self._modules:
             m._set_running_mode(mode)
 
+
+#TODO
 class Bottle(Container):
     """
     Bottle allows varying dimensionality input to be forwarded through
@@ -133,18 +107,13 @@ class Sequential(Container):
     def __init__(self):
         super(Sequential, self).__init__()
 
-
     def _update_output(self, inp):
 
-
         last_output = self._check_input(inp)
-
         for m in self._modules:
             last_output = m(last_output)
 
-
         return last_output
-
 
     @property
     def input_info(self):
@@ -194,7 +163,6 @@ class Parallel(Container):
         super(Parallel, self).__init__()
 
     def _update_output(self, inp):
-
 
         inp = self._check_input(inp)
         inp_ = inp.swapaxes(self._dim, 0)
@@ -255,7 +223,6 @@ class Concat(Container):
 
     def _update_output(self, inp):
 
-
         inp = self._check_input(inp)
 
         outputs = []
@@ -296,5 +263,4 @@ class Concat(Container):
 
 # TODO
 class DepthConcat(Container):
-
     pass

@@ -17,17 +17,18 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import theano
 import math
 
 import tnet
 from tnet.nn import Module, Container, InputInfo
 
-T  = theano.tensor
+theano = tnet.theano
+T = theano.tensor
 func = theano.function
 to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
+
 
 class ParallelList(Container):
     """
@@ -65,7 +66,6 @@ class ParallelList(Container):
     def __init__(self):
         super(ParallelList, self).__init__()
 
-
     def _update_output(self, inp):
 
         outputs = []
@@ -76,7 +76,6 @@ class ParallelList(Container):
             outputs.append(m(inp[i]))
 
         return outputs
-
 
     @property
     def input_info(self):
@@ -148,7 +147,6 @@ class ConcatList(Container):
 
         return outputs
 
-
     @property
     def input_info(self):
         if len(self._modules) > 0:
@@ -182,17 +180,15 @@ class SplitList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
+
         inp = self._check_input(inp)
         dims = self._nb_splits
-        splist_sizes = [1] * dims
+        split_sizes = [1] * dims
         dim = self._dim + 1 if not self._ndim is None else self._dim
-        splits = T.split(inp, splist_sizes, dims, dim)
-        return splits
+        splits = T.split(inp, split_sizes, dims, dim)
 
+        return splits
 
 
 class JoinList(Module):
@@ -205,14 +201,13 @@ class JoinList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
+
         dim = self._dim + 1 if not self._ndim is None else self._dim
         inp = self._check_input(inp)
 
         return T.concatenate([inp], dim)
+
 
 class SelectList(Module):
     """docstring for JoinList."""
@@ -224,9 +219,6 @@ class SelectList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
         if self._dim < 1:
             p = -1
@@ -236,6 +228,7 @@ class SelectList(Module):
         inp = self._check_input(inp)
         assert(type(inp) == list)
         return inp[dim]
+
 
 class CAddList(Module):
     """
@@ -258,8 +251,6 @@ class CAddList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
 
     def _update_output(self, inp):
 
@@ -271,6 +262,7 @@ class CAddList(Module):
             s += inp[i]
 
         return s
+
 
 class CSubList(Module):
     """
@@ -293,9 +285,6 @@ class CSubList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
 
         assert type(inp) == list and len(inp) > 0
@@ -306,6 +295,7 @@ class CSubList(Module):
             s -= inp[i]
 
         return s
+
 
 class CMulList(Module):
     """
@@ -330,10 +320,6 @@ class CMulList(Module):
 
     def _declare(self):
         pass
-
-    def _compile(self):
-        pass
-
 
     def _update_output(self, inp):
 
@@ -380,9 +366,6 @@ class CDivList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
 
         assert type(inp) == list and len(inp) > 0
@@ -427,14 +410,12 @@ class CMaxList(Module):
     def _declare(self):
         pass
 
-    def _compile(self):
-        pass
-
     def _update_output(self, inp):
 
         assert type(inp) == list and len(inp) > 0
         inp = self._check_input(inp)
         return T.max(inp, 0)
+
 
 class CMinList(Module):
     """
@@ -467,9 +448,6 @@ class CMinList(Module):
         super(CMinList, self).__init__()
 
     def _declare(self):
-        pass
-
-    def _compile(self):
         pass
 
     def _update_output(self, inp):

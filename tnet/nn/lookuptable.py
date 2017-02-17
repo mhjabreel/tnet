@@ -55,11 +55,6 @@ class LookupTable(Module):
         self._input_info = InputInfo(dtype='int32', shape=[None])
         super(LookupTable, self).__init__()
 
-
-    def _compile(self, **kwargs):
-        pass
-
-
     def _declare(self):
 
         nin = self._n_index
@@ -77,7 +72,6 @@ class LookupTable(Module):
 
         if not str(inp.dtype).startswith('int'):
             inp = T.cast(inp, 'int32')
-
 
         return self._W[inp]
 
