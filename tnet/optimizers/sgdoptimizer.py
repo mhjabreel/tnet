@@ -32,14 +32,13 @@ config = theano.config
 
 class SGDOptimizer(Optimizer):
 
-
-    def __init__(self, learning_rate=0.01):
+    def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False):
         super(SGDOptimizer, self).__init__()
         self._defaults = {
             "learning_rate": learning_rate,
         }
-
-
+        self._momentum = momentum
+        self._nesterov = nesterov
 
     """
     An abstract methdo to get the placeholders of the optimizer's parameters.
@@ -49,20 +48,29 @@ class SGDOptimizer(Optimizer):
         learning_rate = tnet.Delegator('float32', name='learning_rate', ndim=0)#T.scalar(name='learning_rate')
         return [learning_rate]
 
-
-
     """
     An abstract methdo to get the parameters' update function.
     This method shuld be implemented by the extended optimizers like SGD, Adadelta, ..etc.
     """
 
     def _get_updates(self, params, inputs):
+
         lr = inputs[0]
         step = tnet.Variable(np.array(0.0).astype(theano.config.floatX))
         updates = OrderedDict()
 
         for p in params:
-            updates[p] = p - lr * p.grad
+            # moment
+            m = p.grad.zero_like()
+            v = self._momentum * m - lr * p.grad  # velocity
+
+            updates[m] = v
+
+            if self._nesterov:
+                updates[p] = p + self._momentum * v - lr * p.grad
+            else:
+                updates[p] = p + v
+
         updates[step] = step + 1
 
         return updates

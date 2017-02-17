@@ -1,13 +1,14 @@
-from distutils.core import setup
+import setuptools
 
-setup(
+
+setuptools.setup(
     name='tnet',
-    version='0.1.0',
-    packages=['tnet', 'tnet.nn', 'tnet.nn.rnn', 'tnet.core', 'tnet.cuda', 'tnet.meter', 'tnet.engine', 'tnet.dataset',
-              'tnet.dataset.custom_datasets', 'tnet.optimizers', 'examples'],
+    version='0.1.0alpha',
     url='https://github.com/mhjabreel/tnet',
-    license='MIT',
+    license='Apache 2.0',
+    install_requires=['theano'],
     author='Mohammed Jabreel',
     author_email='mhjabreel@gmail.com',
-    description='Torch and torchnet like library for building and training neural networks in Theano'
+    description='Torch and torchnet like library for building and training neural networks in Theano',
+    packages=setuptools.find_packages()
 )
