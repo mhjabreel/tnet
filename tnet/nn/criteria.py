@@ -50,11 +50,10 @@ class Criterion(object):
         self._output = out.eval()
         return self._output
 
-
 class ClassNLLCriterion(Criterion):
     def _update_output(self, input, target):
         input = T.clip(input, tnet.EPSILON, 1.0 - tnet.EPSILON)
-        return T.nnet.categorical_crossentropy(input, target)
+        return -T.mean(T.log(input)[T.arange(target.shape[0]), target])
 
 
 class CrossEntropyCriterion(Criterion):
