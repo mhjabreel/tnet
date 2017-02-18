@@ -285,6 +285,25 @@ class Select(Module):
         return T.take(inp, self._index, axis=self._dimension)
 
 
+class Reverse(Module):
+    """
+    Reverse a tensor along the the specified dimension
+    """
+    def __init__(self, dim=0, ndim=None):
+        self._dim = dim
+        self._ndim = ndim
+        super(Reverse, self).__init__()
+
+    def _declare(self):
+        pass
+
+    def _update_output(self, inp):
+        inp = self._check_input(inp)
+        dim = self._dim + 1 if not self._ndim is None else self._dim
+
+        slices = [slice(None, None, -1) if i == dim else slice(None, None, None) for i in range(inp.ndim)]
+        return inp[slices]
+
 class Squeeze(Module):
     """
     Applies the Variable squeeze operation.

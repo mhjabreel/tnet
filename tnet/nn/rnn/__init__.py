@@ -19,7 +19,9 @@ import numpy as np
 from tnet.nn import (Module, InputInfo,
                      Container, Sigmoid, Tanh, ReLU,
                      CAddList, CMulList, CSubList, Linear,
-                     Narrow, Transpose, Squeeze, Unsqueeze, MM)
+                     Narrow, Transpose, Squeeze, Unsqueeze,
+                     MM, Concat, Sequential,
+                     SelectList, Select, Reverse)
 
 
 class RNNState(object):
@@ -225,10 +227,19 @@ class LSTMCell(RNNCell):
 class GRUCell(RNNCell):
     def _declare(self, **kwargs):
 
-        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size, False)
-        self._h2h_linear = Linear(self._rnn_size, 3 * self._rnn_size, False)
+        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size)
 
-        self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
+        #self._h2h_linear = Linear(self._rnn_size, 3 * self._rnn_size, False)
+
+        stdv = np.sqrt(6. / (self._rnn_size + 3 * self._rnn_size))
+        u_values = np.array(np.random.uniform(low=-stdv,
+                                              high=stdv,
+                                              size=(self._rnn_size, 3 * self._rnn_size)),
+                            tnet.default_dtype())
+
+        self._U = tnet.Parameter(u_values)
+        self._params = self._i2h_linear.parameters + [self._U]
+                       #self._h2h_linear.parameters
 
     def _update_output(self, inp):
 
@@ -239,11 +250,15 @@ class GRUCell(RNNCell):
         prev_h = inp[1]
 
         x2h = self._i2h_linear(x)  # bsz x (3 * rnn_size)
-        h2h = self._h2h_linear(prev_h)
+        #h2h = self._h2h_linear(prev_h)
 
+        g2h = CAddList()([
+            MM()([prev_h, Narrow(1, 0, 2 * nhid)(self._U)])
+        ])
         ru = CAddList()([
-            Narrow(1, 0, 2 * nhid)(h2h ),
-            Narrow(1, 0, 2 * nhid)(x2h)
+            Narrow(1, 0, 2 * nhid)(x2h),
+            g2h
+            #Narrow(1, 0, 2 * nhid)(h2h)
         ])  # bsz x (2 * rnn_size)
 
         # gates
@@ -253,10 +268,14 @@ class GRUCell(RNNCell):
         output = Tanh()(
             CAddList()([
                 Narrow(1, 2 * nhid, nhid)(x2h),
-                CMulList()([
-                    rgate,
-                    Narrow(1, 2 * nhid, nhid)(h2h)
+                MM()([
+                    CMulList()([
+                        rgate,
+                        prev_h
+                    ]),
+                    Narrow(1, 2 * nhid, nhid)(self._U)
                 ])
+
             ])
         )
 
@@ -279,12 +298,12 @@ class GRUCell(RNNCell):
         self._buffer_state = [state]
 
 
-class Recurrent(Container):
+class _Recurrent(Container):
     def __init__(self,
                  rnn_cell,
                  nb_layers=1,
                  return_sequences=True):
-        super(Recurrent, self).__init__()
+        super(_Recurrent, self).__init__()
         self._rnn_cell = rnn_cell
         self._nb_layers = nb_layers
         self._return_sequences = return_sequences
@@ -298,6 +317,11 @@ class Recurrent(Container):
         for _ in range(1, self._nb_layers):
             c = self._rnn_cell.__class__(self._rnn_cell.rnn_size, self._rnn_cell.rnn_size)
             self.add(c)
+
+
+    def scan(self, step, sequences, outputs_info):
+        pass
+
 
     def _update_output(self, inp):
 
@@ -320,7 +344,7 @@ class Recurrent(Container):
                 state_t = m(input_and_state)
                 return state_t
 
-            states, _ = tnet.theano.scan(step, sequences=seq_inp, outputs_info=m.state)
+            states = self.scan(step, sequences=seq_inp, outputs_info=m.state)
             if isinstance(states, list):
                 states = [Transpose(1, 0, 2)(s) for s in states]
             else:
@@ -354,6 +378,28 @@ class Recurrent(Container):
             m = self._modules[0]
             return m.input_info
 
+
+class Recurrent(_Recurrent):
+    def __init__(self,
+                 rnn_cell,
+                 nb_layers=1,
+                 return_sequences=True):
+        super(Recurrent, self).__init__(rnn_cell, nb_layers, return_sequences)
+
+    def scan(self, step, sequences, outputs_info):
+        states, _ = tnet.theano.scan(step, sequences=sequences, outputs_info=outputs_info)
+        return states
+
+class ReversedRecurrent(_Recurrent):
+    def __init__(self,
+                 rnn_cell,
+                 nb_layers=1,
+                 return_sequences=True):
+        super(ReversedRecurrent, self).__init__(rnn_cell, nb_layers, return_sequences)
+
+    def scan(self, step, sequences, outputs_info):
+        states, _ = tnet.theano.scan(step, sequences=sequences, outputs_info=outputs_info, go_backwards=True)
+        return states
 
 class SimpleRNN(Recurrent):
     def __init__(self, input_dim, rnn_size, nb_layers=1, return_sequences=True):
@@ -389,5 +435,40 @@ class GRU(Recurrent):
     def __init__(self, input_dim, rnn_size, nb_layers=1, return_sequences=True):
         cell = GRUCell(input_dim, rnn_size)
         super(GRU, self).__init__(cell, nb_layers, return_sequences)
+
+
+class BidirectionalRNN(Sequential):
+    def __init__(self, fwd_rnn_cell, bwd_rnn_cell=None, nb_layers=1):
+        super(BidirectionalRNN, self).__init__()
+
+        if bwd_rnn_cell is None:
+            bwd_rnn_cell = fwd_rnn_cell.__class__(fwd_rnn_cell.input_dim, fwd_rnn_cell.rnn_size)
+
+
+
+        for i in range(nb_layers):
+            bi_rnn = Concat(2)
+            if i == 0:
+                fc = fwd_rnn_cell
+                bc = bwd_rnn_cell
+            else:
+                fc = fc.__class__(2 * fc.rnn_size, fc.rnn_size)
+                bc = bc.__class__(2 * bc.rnn_size, bc.rnn_size)
+
+            bi_rnn.add(
+                Sequential()
+                .add(Recurrent(fc))
+                .add(SelectList(-1))
+            )
+            bi_rnn.add(
+                Sequential()
+                    #.add(Reverse(1))
+                    .add(ReversedRecurrent(bc, nb_layers=nb_layers))
+                    .add(SelectList(-1))
+                    .add(Reverse(1))
+            )
+
+            self.add(bi_rnn)
+
 
 
