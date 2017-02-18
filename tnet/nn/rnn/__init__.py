@@ -19,7 +19,7 @@ import numpy as np
 from tnet.nn import (Module, InputInfo,
                      Container, Sigmoid, Tanh, ReLU,
                      CAddList, CMulList, CSubList, Linear,
-                     Narrow, Transpose, Squeeze, Unsqueeze)
+                     Narrow, Transpose, Squeeze, Unsqueeze, MM)
 
 
 class RNNState(object):
@@ -224,7 +224,8 @@ class LSTMCell(RNNCell):
 
 class GRUCell(RNNCell):
     def _declare(self, **kwargs):
-        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size)
+
+        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size, False)
         self._h2h_linear = Linear(self._rnn_size, 3 * self._rnn_size, False)
 
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
@@ -234,33 +235,30 @@ class GRUCell(RNNCell):
         nhid = self._rnn_size
 
         inp = self._check_input(inp)
-
         x = inp[0]
         prev_h = inp[1]
 
         x2h = self._i2h_linear(x)  # bsz x (3 * rnn_size)
+        h2h = self._h2h_linear(prev_h)
 
-        h2h = self._h2h_linear(prev_h)  # bsz x (3 * rnn_size)
         ru = CAddList()([
-            Narrow(1, 0, 2 * nhid)(x2h),
-            Narrow(1, 0, 2 * nhid)(h2h),
+            Narrow(1, 0, 2 * nhid)(h2h ),
+            Narrow(1, 0, 2 * nhid)(x2h)
         ])  # bsz x (2 * rnn_size)
 
         # gates
-        rgate = Sigmoid()(
-            Narrow(1, 0, nhid)(ru)
-        )  # bsz x rnn_size
-        ugate = Sigmoid()(
-            Narrow(1, nhid, nhid)(ru)
-        )  # bsz x rnn_size
+        ugate = Sigmoid()(Narrow(1, 0, nhid)(ru))
+        rgate = Sigmoid()(Narrow(1, nhid, nhid)(ru))
 
-        output = Tanh()(CAddList()([
-            Narrow(1, 2 * nhid, nhid)(x2h),
-            CMulList()([
-                rgate,
-                Narrow(1, 2 * nhid, nhid)(h2h),
+        output = Tanh()(
+            CAddList()([
+                Narrow(1, 2 * nhid, nhid)(x2h),
+                CMulList()([
+                    rgate,
+                    Narrow(1, 2 * nhid, nhid)(h2h)
+                ])
             ])
-        ]))
+        )
 
         next_h = CAddList()([
             output,
@@ -268,9 +266,9 @@ class GRUCell(RNNCell):
                 ugate,
                 CSubList()([
                     prev_h,
-                    output,
-                ]),
-            ]),
+                    output
+                ])
+            ])
         ])
 
         return next_h

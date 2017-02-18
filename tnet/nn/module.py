@@ -73,22 +73,26 @@ class Module(object):
 
             type_of_inputs = [type(inp) for inp in input_or_inputs]
 
-            all_types_are_correct = all([ t == np.ndarray or \
-                                         t == T.TensorVariable or \
-                                         t == tnet.Variable or \
-                                         t == T.TensorConstant \
-                                            for t in type_of_inputs])
+            all_types_are_correct = all([t == np.ndarray or
+                                          t == T.TensorVariable or
+                                          t == tnet.Variable or
+                                          t == tnet.Parameter or
+                                          t == T.TensorConstant
+                                          for t in type_of_inputs])
 
             if not all_types_are_correct:
-                raise  ValueError("Wrong types are passed")
+                raise ValueError("Wrong types are passed %s" %inp)
 
-            input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else \
+            input_or_inputs = [tnet.Variable(inp) if isinstance(t, np.ndarray) else
                                inp for inp in input_or_inputs]
         elif type_of_input == np.ndarray:
 
             input_or_inputs = to_tensor(input_or_inputs)#tnet.Variable(input_or_inputs)
         else:
-            if not (type_of_input == T.TensorVariable or type_of_input == T.TensorConstant or type_of_input == tnet.Variable):
+            if not (type_of_input == T.TensorVariable or
+                            type_of_input == T.TensorConstant or
+                            type_of_input == tnet.Variable or
+                            type_of_input == tnet.Parameter):
                 raise  ValueError("Wrong types are passed")
 
         return input_or_inputs
