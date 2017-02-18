@@ -94,8 +94,8 @@ class RNNCell(Module):
 
 class BasicCell(RNNCell):
     def _declare(self, **kwargs):
-        self._i2h_linear = Linear(self._input_dim, self._rnn_size, False)
-        self._h2h_linear = Linear(self._rnn_size, self._rnn_size)
+        self._i2h_linear = Linear(self._input_dim, self._rnn_size)
+        self._h2h_linear = Linear(self._rnn_size, self._rnn_size, False)
 
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
 
@@ -109,13 +109,15 @@ class BasicCell(RNNCell):
         return h
 
     def zero_state(self, batch_size):
-        self._buffer_state = [tnet.T.zeros((batch_size, self._rnn_size))]
+        state = tnet.T.zeros((batch_size, self._rnn_size))
+        state = tnet.T.unbroadcast(state, 1)
+        self._buffer_state = [state]
 
 
 class ElmanCell(RNNCell):
     def _declare(self, **kwargs):
-        self._i2h_linear = Linear(self._input_dim, self._rnn_size, False)
-        self._h2h_linear = Linear(self._rnn_size, self._rnn_size)
+        self._i2h_linear = Linear(self._input_dim, self._rnn_size)
+        self._h2h_linear = Linear(self._rnn_size, self._rnn_size, False)
 
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
 
@@ -222,8 +224,8 @@ class LSTMCell(RNNCell):
 
 class GRUCell(RNNCell):
     def _declare(self, **kwargs):
-        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size, False)
-        self._h2h_linear = Linear(self._rnn_size, 3 * self._rnn_size)
+        self._i2h_linear = Linear(self._input_dim, 3 * self._rnn_size)
+        self._h2h_linear = Linear(self._rnn_size, 3 * self._rnn_size, False)
 
         self._params = self._i2h_linear.parameters + self._h2h_linear.parameters
 
@@ -237,6 +239,7 @@ class GRUCell(RNNCell):
         prev_h = inp[1]
 
         x2h = self._i2h_linear(x)  # bsz x (3 * rnn_size)
+
         h2h = self._h2h_linear(prev_h)  # bsz x (3 * rnn_size)
         ru = CAddList()([
             Narrow(1, 0, 2 * nhid)(x2h),
@@ -273,7 +276,9 @@ class GRUCell(RNNCell):
         return next_h
 
     def zero_state(self, batch_size):
-        self._buffer_state = [tnet.T.zeros((batch_size, self._rnn_size))]
+        state = tnet.T.zeros((batch_size, self._rnn_size))
+        state = tnet.T.unbroadcast(state, 1)
+        self._buffer_state = [state]
 
 
 class Recurrent(Container):
@@ -286,7 +291,7 @@ class Recurrent(Container):
         self._nb_layers = nb_layers
         self._return_sequences = return_sequences
 
-        self._modules = [self._rnn_cell]
+        self.add(rnn_cell)
 
         self._extend()
 
@@ -294,7 +299,7 @@ class Recurrent(Container):
 
         for _ in range(1, self._nb_layers):
             c = self._rnn_cell.__class__(self._rnn_cell.rnn_size, self._rnn_cell.rnn_size)
-            self._modules.append(c)
+            self.add(c)
 
     def _update_output(self, inp):
 

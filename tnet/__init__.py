@@ -32,6 +32,8 @@ T = theano.tensor
 theano.config.floatX = 'float32'
 theano.config.mode = 'FAST_RUN'
 
+__all__ = ["default_dtype", "EPSILON", "device", "rand", "randn", "zeros", "ones", "set_seed"]
+
 
 def default_dtype():
     return theano.config.floatX
@@ -39,6 +41,9 @@ def default_dtype():
 EPSILON = 1e-7
 
 device = 'cpu'
+
+def set_seed(seed):
+    np.random.seed(seed)
 """
 def Variable(value, dtype=None, name=None):
     if not isinstance(value, np.ndarray):
