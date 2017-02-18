@@ -236,7 +236,7 @@ class Concat(Container):
     @property
     def input_info(self):
         if len(self._modules) > 0:
-            shape = [None] * self._dim + 1
+            shape = [None] * self._dim #+ [1]
             type = self._modules[0].input_info.dtype
             return InputInfo(shape, type)
 
