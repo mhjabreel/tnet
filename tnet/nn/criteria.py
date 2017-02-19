@@ -23,7 +23,7 @@ import numpy as np
 import math
 
 import tnet
-from tnet.nn import Module, LogSoftMax
+from tnet.nn import Module, LogSoftMax, SoftMax
 
 __all__ = [
     "Criterion",
@@ -53,24 +53,24 @@ class Criterion(object):
 class ClassNLLCriterion(Criterion):
     def _update_output(self, input, target):
         input = T.clip(input, tnet.EPSILON, 1.0 - tnet.EPSILON)
-        return -T.mean(T.log(input)[T.arange(target.shape[0]), target])
+        return T.nnet.categorical_crossentropy(input, target).mean()#-T.mean(T.log(input)[T.arange(target.shape[0]), target])
 
 
 class CrossEntropyCriterion(Criterion):
 
     def __init__(self, **kwargs):
-        self.ls = LogSoftMax()
+
+        self.ls = SoftMax()
 
     def _update_output(self, input, target):
         out = self.ls(input)
-        return -T.mean(out[T.arange(target.shape[0]), target])
+        out = T.clip(out, tnet.EPSILON, 1.0 - tnet.EPSILON)
+        return T.nnet.categorical_crossentropy(out, target).mean()
 
 
 class BCECriterion(Criterion):
 
     def _update_output(self, input, target):
-
         input = T.clip(input, tnet.EPSILON, 1.0 - tnet.EPSILON)
         loss = T.mean(T.nnet.binary_crossentropy(input, target), axis=-1)
-
         return loss
