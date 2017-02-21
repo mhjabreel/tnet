@@ -68,7 +68,13 @@ class _var(_tensor_py_operators):
         v.zero()
         return v
 
-
+    def size(self, dim=None):
+        shape = self.data.shape
+        if dim is None:
+            return shape
+        dim = int(dim)
+        assert dim >= 0 and dim < len(shape)
+        return shape[dim]
 
     def copy(self, val):
         self.set_value(val)

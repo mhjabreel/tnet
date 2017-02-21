@@ -61,7 +61,9 @@ class SGDOptimizer(Optimizer):
 
         for p in params:
             # moment
-            m = p.grad.zero_like()
+            sz = p.size()
+            m_vals = np.zeros(sz, dtype=p.dtype)
+            m = tnet.Variable(m_vals)
             v = self._momentum * m - lr * p.grad  # velocity
 
             updates[m] = v
