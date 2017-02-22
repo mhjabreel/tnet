@@ -44,16 +44,14 @@ device = 'cpu'
 
 def set_seed(seed):
     np.random.seed(seed)
-"""
+
 def Variable(value, dtype=None, name=None):
     if not isinstance(value, np.ndarray):
         if dtype is None:
-            dtype = theano.config.floatX
+            dtype = default_dtype()
         value = np.asarray(value, dtype=dtype)
 
     var = theano.shared(value, name=name)
-
-
     return var
 
 
@@ -66,7 +64,7 @@ def Parameter(value, dtype=None, name=None):
 
     return var
 
-#"""
+
 def rand(*shape):
     x = np.random.random(shape).astype(theano.config.floatX)
     return tnet.Variable(x)

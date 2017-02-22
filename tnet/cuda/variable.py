@@ -34,7 +34,7 @@ to_tensor = T.as_tensor_variable
 to_shared = theano.shared
 config = theano.config
 
-
+__all__ = []
 
 class Variable(theano.sandbox.cuda.var.CudaNdarraySharedVariable, _var):
 

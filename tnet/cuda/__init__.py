@@ -23,8 +23,8 @@ import theano.tensor.basic
 from theano.sandbox.cuda.type import CudaNdarrayType
 import theano.sandbox.cuda
 from theano.sandbox.cuda import use, unuse, CudaNdarray, filter as type_support_filter
-from tnet.core.variable import Variable as CPU_Variable, Parameter as CPU_Parameter
-from tnet.cuda.variable import Variable as GPU_Variable, Parameter as GPU_Parameter
+#from tnet.core.variable import Variable as CPU_Variable, Parameter as CPU_Parameter
+#from tnet.cuda.variable import Variable as GPU_Variable, Parameter as GPU_Parameter
 
 # We can't test the driver during import of theano.sandbox.cuda as
 # this cause circular import dependency. So we also test it manually
@@ -56,8 +56,8 @@ def device(d):
         if d < 0:
             d = 'cpu'
 
-            tnet.Variable = CPU_Variable#get_type = tnet.get_tensor_type#
-            tnet.Parameter = CPU_Parameter
+            #tnet.Variable = CPU_Variable#get_type = tnet.get_tensor_type#
+            #tnet.Parameter = CPU_Parameter
             unuse()
             tnet.device = 'cpu'
             return
@@ -66,6 +66,6 @@ def device(d):
     assert type(d) == str
     use(d, force=True, default_to_move_computation_to_gpu=True, move_shared_float32_to_gpu=False, test_driver=False)
 
-    tnet.Variable = GPU_Variable#get_type = tnet.get_tensor_type#
-    tnet.Parameter = GPU_Parameter
+    #tnet.Variable = GPU_Variable#get_type = tnet.get_tensor_type#
+    #tnet.Parameter = GPU_Parameter
     tnet.device = d

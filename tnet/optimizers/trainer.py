@@ -72,8 +72,8 @@ class Trainer(object):
         g_params = []
 
         for p in self._network.parameters:
-            #if hasattr(p, 'grad'):
-            if isinstance(p, tnet.Parameter):
+            if hasattr(p, 'grad'):
+            #if isinstance(p, tnet.Parameter):
 
                 g = T.grad(cost=cost, wrt=p)
                 params.append(p)

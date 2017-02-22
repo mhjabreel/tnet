@@ -25,6 +25,8 @@ from theano.compile import SharedVariable
 from theano.sandbox.cuda.type import CudaNdarrayType
 from theano.compile import shared_constructor
 #from tnet.core.cuda import SharedVariable as CudaVariable
+
+__all__ = []
 try:
     # We must do those import to be able to create the full doc when nvcc
     # is not available
